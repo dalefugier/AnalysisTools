@@ -11,7 +11,7 @@ See the [AnalysisTools](http://www.food4rhino.com/app/analysistools) plug-in pag
 
 To build the sample, you are going to need:
 
-* Rhinoceros 5 (http://www.rhino3d.com)
-* Rhinoceros 5 C++ SDK (http://developer.rhino3d.com/guides/cpp/installing_tools_windows/)
+* [Rhinoceros 5](http://www.rhino3d.com)
+* [Rhinoceros 5 C++ SDK](http://developer.rhino3d.com/guides/cpp/installing_tools_windows/)
 * Microsoft Visual C++ 2010 (for 64-bit builds)
 * Microsoft Visual C++ 2005 (optional, for 32-bit builds)
