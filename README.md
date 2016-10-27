@@ -4,7 +4,10 @@ Display the results of analysis in Rhino.
 ## Overview
 The AnalysisTools plug-in is designed to import your analysis data into Rhino 5 for Windows for visual inspection using false color analysis. The plug-in can be used to read in result files from various analysis software to aid in further refinement of the model. The resulting analysis mesh in Rhino can be used to see 3D false color plots of velocity, pressure, solar radiance, and more.
 
-## Building
+## More Information
+See the [AnalysisTools](http://www.food4rhino.com/app/analysistools) plug-in page on [Food4Rhino](http://www.food4rhino.com/).
+
+## Build
 
 To build the sample, you are going to need:
 
