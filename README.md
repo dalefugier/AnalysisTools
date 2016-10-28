@@ -7,6 +7,8 @@ The AnalysisTools plug-in is designed to import your analysis data into Rhino 5 
 
 The plugin currently reads the [.TP format](https://people.sc.fsu.edu/~jburkardt/data/tec/tec.html). See the [Samples directory](https://github.com/dalefugier/AnalysisTools/tree/master/Samples) for these files.  It is easy enough to modify this code to read other formats.
 
+In addition to supporting the above file formats, the plugin also supports RhinoScript. Thus, if your analysis data is in some other file format, you can write a script, using RhinoScript, to read your files and create analysis meshes. The RhinoScript-callable methods are documented in the (TestAnalysisTools.pdf)[https://github.com/dalefugier/AnalysisTools/blob/master/Samples/TestAnalysisTools.pdf] file included with the project.
+
 ## More Information
 * See the [AnalysisTools](http://www.food4rhino.com/app/analysistools) plug-in page on [Food4Rhino](http://www.food4rhino.com/) for detailed information about this plugin.
 * Join the [Developer forums](http://discourse.mcneel.com/c/rhino-developer) to ask any questions about these tools.
