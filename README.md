@@ -1,5 +1,5 @@
 # AnalysisTools Display
-=========
+
 ### A Rhino 5 C++ plugin to display the results of analysis meshes in Rhino.
 
 ## Overview
