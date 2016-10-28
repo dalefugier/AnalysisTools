@@ -22,4 +22,4 @@ To build the sample, you are going to need:
 * Microsoft Visual C++ 2010 (for 64-bit builds)
 * Microsoft Visual C++ 2005 (optional, for 32-bit builds)
 
-For detailed information on setting up and compiling a Rhino plugin see the [Creating your first C/C++ Plugin for Rhino Tutorial](http://developer.rhino3d.com/guides/cpp/your_first_plugin_windows/)
+For detailed information on setting up and compiling a Rhino plugin see the [Creating your first C/C++ Plugin for Rhino Tutorial](http://developer.rhino3d.com/guides/cpp/your_first_plugin_windows/).
