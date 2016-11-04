@@ -1,6 +1,7 @@
-// AnalysisTools.idl : type library source for AnalysisTools.dll
-// This file will be processed by the MIDL compiler to produce the
-// type library (AnalysisTools.tlb).
+// Copyright (c) 1993-2016 Robert McNeel & Associates. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+// AnalysisTools.idl
 
 #include "olectl.h"
 [uuid(8E069405-7078-499A-A844-5DB9B00C9252), version(1.0)]
