@@ -167,7 +167,7 @@ void CAnalysisDialog::CreateHueBar()
   int height = rect.Height();
 
   LPBITMAPINFO dib = m_huebar_dib.CreateDib(width, height, 24);
-  if (0 == dib)
+  if (nullptr == dib)
     return;
 
   char* baseptr = (char*)m_huebar_dib.FindDIBBits();

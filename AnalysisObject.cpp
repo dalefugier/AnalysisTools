@@ -179,7 +179,7 @@ VARIANT CAnalysisObject::AnalysisMeshData(const VARIANT& vaObject, const VARIANT
   if (CRhinoVariantHelpers::ConvertVariant(vaData, new_data) && new_data.Count() == mesh->VertexCount())
   {
     bool bAttach = false;
-    if (0 == ud)
+    if (nullptr == ud)
     {
       ud = new CAnalysisUserData();
       bAttach = true;

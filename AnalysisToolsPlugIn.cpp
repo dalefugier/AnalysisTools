@@ -184,7 +184,7 @@ static const wchar_t* ParseInt(const wchar_t* s, int& i)
     }
 
     if (*s < '0' || *s > '9')
-      s = 0;
+      s = nullptr;
     else
     {
       while (*s >= '0' && *s <= '9')
@@ -222,7 +222,7 @@ static const wchar_t* ParseDouble(const wchar_t* s, double& x)
     }
 
     if ((*s < '0' || *s > '9'))
-      s = 0;
+      s = nullptr;
     else
     {
       while (*s >= '0' && *s <= '9' && buffer_length < 512)
@@ -234,7 +234,7 @@ static const wchar_t* ParseDouble(const wchar_t* s, double& x)
       if ('.' == *s  && buffer_length < 512)
       {
         if (bHaveDecimal)
-          return 0;
+          return nullptr;
 
         bHaveDecimal = true;
         buffer[buffer_length++] = *s++;
@@ -256,14 +256,14 @@ static const wchar_t* ParseDouble(const wchar_t* s, double& x)
           buffer[buffer_length++] = *s++;
 
         if (*s < '0' || *s > '9')
-          return 0;
+          return nullptr;
 
         while (*s >= '0' && *s <= '9' && buffer_length < 512)
           buffer[buffer_length++] = *s++;
       }
 
       if (buffer_length >= 512 || IsNumeric(*s))
-        return 0;
+        return nullptr;
 
       buffer[buffer_length] = 0;
       double v = ON_UNSET_VALUE;
@@ -271,7 +271,7 @@ static const wchar_t* ParseDouble(const wchar_t* s, double& x)
       if (1 == swscanf(buffer, L"%lg", &v))
         x = v;
       else
-        s = 0;
+        s = nullptr;
     }
   }
 
@@ -281,23 +281,23 @@ static const wchar_t* ParseDouble(const wchar_t* s, double& x)
 static const wchar_t* ParseCount(const wchar_t* line, const wchar_t* string, int& count)
 {
   count = 0;
-  if (0 == line || 0 == string)
-    return 0;
+  if (nullptr == line || nullptr == string)
+    return nullptr;
 
   const size_t string_length = wcslen(string);
   if (string_length <= 0)
-    return 0;
+    return nullptr;
 
   const wchar_t* s = SkipJunk(line);
-  if (0 == s)
-    return 0;
+  if (nullptr == s)
+    return nullptr;
 
   if (_wcsnicmp(string, s, string_length))
-    return 0;
+    return nullptr;
 
   s = SkipJunk(s + string_length);
   s = ParseInt(s, count);
-  if (0 == s)
+  if (nullptr == s)
     count = 0;
 
   return s;
@@ -322,7 +322,7 @@ static const wchar_t* ParseVertex(const wchar_t* line, ON_3dPoint& v, double& c)
       c = a;
     }
     else
-      line = 0;
+      line = nullptr;
   }
   return line;
 }
@@ -358,7 +358,7 @@ static const wchar_t* ParseFace(const wchar_t* line, const int vcount, ON_MeshFa
       f.vi[3] = d;
     }
     else
-      line = 0;
+      line = nullptr;
   }
   return line;
 }
@@ -399,37 +399,37 @@ ON_Mesh* CAnalysisToolsPlugIn::ReadStructuredTechPlotFile(FILE* fp, ON_Mesh* mes
   int IMAX = 0;
   int JMAX = 0;
   int KMAX = 0;
-  const wchar_t* s = 0;
+  const wchar_t* s = nullptr;
 
   while (IMAX <= 0)
   {
-    while (0 == s || *s == 0)
+    while (nullptr == s || *s == 0)
     {
       s = fgetws(line, 127, fp);
-      if (0 == s)
-        return 0;
+      if (nullptr == s)
+        return nullptr;
     }
     s = ParseCount(s, L"I=", IMAX);
   }
 
   while (JMAX <= 0)
   {
-    while (0 == s || *s == 0)
+    while (nullptr == s || *s == 0)
     {
       s = fgetws(line, 127, fp);
-      if (0 == s)
-        return 0;
+      if (nullptr == s)
+        return nullptr;
     }
     s = ParseCount(s, L"J=", JMAX);
   }
 
   while (KMAX <= 0)
   {
-    while (0 == s || *s == 0)
+    while (nullptr == s || *s == 0)
     {
       s = fgetws(line, 127, fp);
-      if (0 == s)
-        return 0;
+      if (nullptr == s)
+        return nullptr;
     }
     s = ParseCount(s, L"K=", KMAX);
   }
@@ -557,7 +557,7 @@ ON_Mesh* CAnalysisToolsPlugIn::ReadStructuredTechPlotFile(FILE* fp, ON_Mesh* mes
     CAnalysisUserData::UpdateColors(mesh);
   }
   else
-    mesh = 0;
+    mesh = nullptr;
 
   return mesh;
 }
@@ -573,12 +573,12 @@ ON_Mesh* CAnalysisToolsPlugIn::ReadFalseColorMeshFile(FILE* fp, ON_Mesh* mesh)
   while (vcount <= 0 && fgetws(line, 127, fp))
     ParseCount(line, L"vertexcount", vcount);
   if (vcount < 3)
-    return 0;
+    return nullptr;
 
   if (fgetws(line, 127, fp))
     ParseCount(line, L"facecount", fcount);
   if (fcount <= 0)
-    return 0;
+    return nullptr;
 
   ON_SimpleArray<ON_3dPoint> v(vcount);
   ON_SimpleArray<double> a(vcount);
@@ -586,18 +586,18 @@ ON_Mesh* CAnalysisToolsPlugIn::ReadFalseColorMeshFile(FILE* fp, ON_Mesh* mesh)
   for (int i = 0; i < vcount; i++)
   {
     if (!fgetws(line, 127, fp))
-      return 0;
+      return nullptr;
     if (!ParseVertex(line, v.AppendNew(), a.AppendNew()))
-      return 0;
+      return nullptr;
   }
 
   ON_SimpleArray<ON_MeshFace> f(fcount);
   for (int i = 0; i < fcount; i++)
   {
     if (!fgetws(line, 127, fp))
-      return 0;
+      return nullptr;
     if (!ParseFace(line, vcount, f.AppendNew()))
-      return 0;
+      return nullptr;
   }
 
   if (mesh)

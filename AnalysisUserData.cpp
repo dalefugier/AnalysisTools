@@ -20,7 +20,7 @@ ON_UUID CAnalysisUserData::Id()
 
 const CAnalysisUserData* CAnalysisUserData::Get(const ON_Mesh* mesh)
 {
-  const CAnalysisUserData* ud = 0;
+  const CAnalysisUserData* ud = nullptr;
   if (mesh)
     ud = CAnalysisUserData::Cast(mesh->GetUserData(CAnalysisUserData::Id()));
   return ud;

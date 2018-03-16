@@ -258,7 +258,7 @@ bool CRhinoVariantHelpers::IsVariantPoint(const VARIANT& va)
   while (pva->vt == (VT_BYREF | VT_VARIANT))
     pva = pva->pvarVal;
 
-  SAFEARRAY* psa = 0;
+  SAFEARRAY* psa = nullptr;
   if (pva->vt & VT_ARRAY)
   {
     if (pva->vt & VT_BYREF)
@@ -267,7 +267,7 @@ bool CRhinoVariantHelpers::IsVariantPoint(const VARIANT& va)
       psa = pva->parray;
   }
 
-  if (psa == 0)
+  if (psa == nullptr)
     return false;
 
   if (SafeArrayGetDim(psa) != 1)
@@ -553,7 +553,7 @@ int CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_SimpleArray<bool>
   while (pva->vt == (VT_BYREF | VT_VARIANT))
     pva = pva->pvarVal;
 
-  SAFEARRAY* psa = 0;
+  SAFEARRAY* psa = nullptr;
   if (pva->vt & VT_ARRAY)
   {
     if (pva->vt & VT_BYREF)
@@ -562,7 +562,7 @@ int CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_SimpleArray<bool>
       psa = pva->parray;
   }
 
-  if (psa == 0)
+  if (psa == nullptr)
   {
     if (false == bQuiet)
       ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
@@ -591,7 +591,7 @@ int CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_SimpleArray<int>&
   while (pva->vt == (VT_BYREF | VT_VARIANT))
     pva = pva->pvarVal;
 
-  SAFEARRAY* psa = 0;
+  SAFEARRAY* psa = nullptr;
   if (pva->vt & VT_ARRAY)
   {
     if (pva->vt & VT_BYREF)
@@ -600,7 +600,7 @@ int CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_SimpleArray<int>&
       psa = pva->parray;
   }
 
-  if (psa == 0)
+  if (psa == nullptr)
   {
     if (false == bQuiet)
       ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
@@ -629,7 +629,7 @@ int CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_SimpleArray<float
   while (pva->vt == (VT_BYREF | VT_VARIANT))
     pva = pva->pvarVal;
 
-  SAFEARRAY* psa = 0;
+  SAFEARRAY* psa = nullptr;
   if (pva->vt & VT_ARRAY)
   {
     if (pva->vt & VT_BYREF)
@@ -638,7 +638,7 @@ int CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_SimpleArray<float
       psa = pva->parray;
   }
 
-  if (psa == 0)
+  if (psa == nullptr)
   {
     if (false == bQuiet)
       ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
@@ -667,7 +667,7 @@ int CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_SimpleArray<doubl
   while (pva->vt == (VT_BYREF | VT_VARIANT))
     pva = pva->pvarVal;
 
-  SAFEARRAY* psa = 0;
+  SAFEARRAY* psa = nullptr;
   if (pva->vt & VT_ARRAY)
   {
     if (pva->vt & VT_BYREF)
@@ -676,7 +676,7 @@ int CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_SimpleArray<doubl
       psa = pva->parray;
   }
 
-  if (psa == 0)
+  if (psa == nullptr)
   {
     if (false == bQuiet)
       ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
@@ -705,7 +705,7 @@ int CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_ClassArray<ON_wSt
   while (pva->vt == (VT_BYREF | VT_VARIANT))
     pva = pva->pvarVal;
 
-  SAFEARRAY* psa = 0;
+  SAFEARRAY* psa = nullptr;
   if (pva->vt & VT_ARRAY)
   {
     if (pva->vt & VT_BYREF)
@@ -714,7 +714,7 @@ int CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_ClassArray<ON_wSt
       psa = pva->parray;
   }
 
-  if (psa == 0)
+  if (psa == nullptr)
   {
     if (false == bQuiet)
       ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
@@ -743,7 +743,7 @@ bool CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_2dPoint& pt, boo
   while (pva->vt == (VT_BYREF | VT_VARIANT))
     pva = pva->pvarVal;
 
-  SAFEARRAY* psa = 0;
+  SAFEARRAY* psa = nullptr;
   if (pva->vt & VT_ARRAY)
   {
     if (pva->vt & VT_BYREF)
@@ -752,7 +752,7 @@ bool CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_2dPoint& pt, boo
       psa = pva->parray;
   }
 
-  if (psa == 0)
+  if (psa == nullptr)
   {
     if (false == bQuiet)
       ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
@@ -792,7 +792,7 @@ bool CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_3dPoint& pt, boo
   while (pva->vt == (VT_BYREF | VT_VARIANT))
     pva = pva->pvarVal;
 
-  SAFEARRAY* psa = 0;
+  SAFEARRAY* psa = nullptr;
   if (pva->vt & VT_ARRAY)
   {
     if (pva->vt & VT_BYREF)
@@ -801,7 +801,7 @@ bool CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_3dPoint& pt, boo
       psa = pva->parray;
   }
 
-  if (psa == 0)
+  if (psa == nullptr)
   {
     if (false == bQuiet)
       ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
@@ -841,7 +841,7 @@ bool CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_3fPoint& pt, boo
   while (pva->vt == (VT_BYREF | VT_VARIANT))
     pva = pva->pvarVal;
 
-  SAFEARRAY* psa = 0;
+  SAFEARRAY* psa = nullptr;
   if (pva->vt & VT_ARRAY)
   {
     if (pva->vt & VT_BYREF)
@@ -850,7 +850,7 @@ bool CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_3fPoint& pt, boo
       psa = pva->parray;
   }
 
-  if (psa == 0)
+  if (psa == nullptr)
   {
     if (false == bQuiet)
       ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
@@ -888,7 +888,7 @@ bool CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_4fPoint& pt, boo
   while (pva->vt == (VT_BYREF | VT_VARIANT))
     pva = pva->pvarVal;
 
-  SAFEARRAY* psa = 0;
+  SAFEARRAY* psa = nullptr;
   if (pva->vt & VT_ARRAY)
   {
     if (pva->vt & VT_BYREF)
@@ -897,7 +897,7 @@ bool CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_4fPoint& pt, boo
       psa = pva->parray;
   }
 
-  if (psa == 0)
+  if (psa == nullptr)
   {
     if (false == bQuiet)
       ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
@@ -935,7 +935,7 @@ bool CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_4dPoint& pt, boo
   while (pva->vt == (VT_BYREF | VT_VARIANT))
     pva = pva->pvarVal;
 
-  SAFEARRAY* psa = 0;
+  SAFEARRAY* psa = nullptr;
   if (pva->vt & VT_ARRAY)
   {
     if (pva->vt & VT_BYREF)
@@ -944,7 +944,7 @@ bool CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_4dPoint& pt, boo
       psa = pva->parray;
   }
 
-  if (psa == 0)
+  if (psa == nullptr)
   {
     if (false == bQuiet)
       ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
@@ -997,7 +997,7 @@ int CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_2dPointArray& arr
   while (pva->vt == (VT_BYREF | VT_VARIANT))
     pva = pva->pvarVal;
 
-  SAFEARRAY* psa = 0;
+  SAFEARRAY* psa = nullptr;
   if (pva->vt & VT_ARRAY)
   {
     if (pva->vt & VT_BYREF)
@@ -1006,7 +1006,7 @@ int CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_2dPointArray& arr
       psa = pva->parray;
   }
 
-  if (psa == 0)
+  if (psa == nullptr)
   {
     if (false == bQuiet)
       ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
@@ -1035,7 +1035,7 @@ int CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_3dPointArray& arr
   while (pva->vt == (VT_BYREF | VT_VARIANT))
     pva = pva->pvarVal;
 
-  SAFEARRAY* psa = 0;
+  SAFEARRAY* psa = nullptr;
   if (pva->vt & VT_ARRAY)
   {
     if (pva->vt & VT_BYREF)
@@ -1044,7 +1044,7 @@ int CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_3dPointArray& arr
       psa = pva->parray;
   }
 
-  if (psa == 0)
+  if (psa == nullptr)
   {
     if (false == bQuiet)
       ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
@@ -1073,7 +1073,7 @@ int CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_3fPointArray& arr
   while (pva->vt == (VT_BYREF | VT_VARIANT))
     pva = pva->pvarVal;
 
-  SAFEARRAY* psa = 0;
+  SAFEARRAY* psa = nullptr;
   if (pva->vt & VT_ARRAY)
   {
     if (pva->vt & VT_BYREF)
@@ -1082,7 +1082,7 @@ int CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_3fPointArray& arr
       psa = pva->parray;
   }
 
-  if (psa == 0)
+  if (psa == nullptr)
   {
     if (false == bQuiet)
       ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
@@ -1111,7 +1111,7 @@ int CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_4dPointArray& arr
   while (pva->vt == (VT_BYREF | VT_VARIANT))
     pva = pva->pvarVal;
 
-  SAFEARRAY* psa = 0;
+  SAFEARRAY* psa = nullptr;
   if (pva->vt & VT_ARRAY)
   {
     if (pva->vt & VT_BYREF)
@@ -1120,7 +1120,7 @@ int CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_4dPointArray& arr
       psa = pva->parray;
   }
 
-  if (psa == 0)
+  if (psa == nullptr)
   {
     if (false == bQuiet)
       ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
@@ -1149,7 +1149,7 @@ int CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_4fPointArray& arr
   while (pva->vt == (VT_BYREF | VT_VARIANT))
     pva = pva->pvarVal;
 
-  SAFEARRAY* psa = 0;
+  SAFEARRAY* psa = nullptr;
   if (pva->vt & VT_ARRAY)
   {
     if (pva->vt & VT_BYREF)
@@ -1158,7 +1158,7 @@ int CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_4fPointArray& arr
       psa = pva->parray;
   }
 
-  if (psa == 0)
+  if (psa == nullptr)
   {
     if (false == bQuiet)
       ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
@@ -1187,7 +1187,7 @@ int CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_SimpleArray<ON_Co
   while (pva->vt == (VT_BYREF | VT_VARIANT))
     pva = pva->pvarVal;
 
-  SAFEARRAY* psa = 0;
+  SAFEARRAY* psa = nullptr;
   if (pva->vt & VT_ARRAY)
   {
     if (pva->vt & VT_BYREF)
@@ -1196,7 +1196,7 @@ int CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_SimpleArray<ON_Co
       psa = pva->parray;
   }
 
-  if (psa == 0)
+  if (psa == nullptr)
   {
     if (false == bQuiet)
       ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
@@ -1265,13 +1265,13 @@ bool CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_Xform& xform, bo
   while (pva->vt == (VT_BYREF | VT_VARIANT))
     pva = pva->pvarVal;
 
-  SAFEARRAY* psa = 0;
+  SAFEARRAY* psa = nullptr;
   if (pva->vt == (VT_ARRAY | VT_VARIANT))
     psa = pva->parray;
   else if (pva->vt == (VT_ARRAY | VT_VARIANT | VT_BYREF))
     psa = *pva->pparray;
 
-  if (psa == 0)
+  if (psa == nullptr)
   {
     if (false == bQuiet)
       ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
@@ -1976,7 +1976,7 @@ int CRhinoVariantHelpers::VariantArrayToBooleanArray(SAFEARRAY* psa, ON_SimpleAr
   if (SUCCEEDED(hl) && SUCCEEDED(hu))
   {
     arr.SetCapacity(upper - lower + 1);
-    VARIANT* pvData = 0;
+    VARIANT* pvData = nullptr;
     HRESULT hr = SafeArrayAccessData(psa, (void HUGEP**)&pvData);
     if (SUCCEEDED(hr) && pvData)
     {
@@ -2013,7 +2013,7 @@ int CRhinoVariantHelpers::VariantArrayToIntegerArray(SAFEARRAY* psa, ON_SimpleAr
   if (SUCCEEDED(hl) && SUCCEEDED(hu))
   {
     arr.SetCapacity(upper - lower + 1);
-    VARIANT* pvData = 0;
+    VARIANT* pvData = nullptr;
     HRESULT hr = SafeArrayAccessData(psa, (void HUGEP**)&pvData);
     if (SUCCEEDED(hr) && pvData)
     {
@@ -2050,7 +2050,7 @@ int CRhinoVariantHelpers::VariantArrayToFloatArray(SAFEARRAY* psa, ON_SimpleArra
   if (SUCCEEDED(hl) && SUCCEEDED(hu))
   {
     arr.SetCapacity(upper - lower + 1);
-    VARIANT* pvData = 0;
+    VARIANT* pvData = nullptr;
     HRESULT hr = SafeArrayAccessData(psa, (void HUGEP**)&pvData);
     if (SUCCEEDED(hr) && pvData)
     {
@@ -2087,7 +2087,7 @@ int CRhinoVariantHelpers::VariantArrayToDoubleArray(SAFEARRAY* psa, ON_SimpleArr
   if (SUCCEEDED(hl) && SUCCEEDED(hu))
   {
     arr.SetCapacity(upper - lower + 1);
-    VARIANT* pvData = 0;
+    VARIANT* pvData = nullptr;
     HRESULT hr = SafeArrayAccessData(psa, (void HUGEP**)&pvData);
     if (SUCCEEDED(hr) && pvData)
     {
@@ -2124,7 +2124,7 @@ int CRhinoVariantHelpers::VariantArrayToStringArray(SAFEARRAY* psa, ON_ClassArra
   if (SUCCEEDED(hl) && SUCCEEDED(hu))
   {
     arr.SetCapacity(upper - lower + 1);
-    VARIANT* pvData = 0;
+    VARIANT* pvData = nullptr;
     HRESULT hr = SafeArrayAccessData(psa, (void HUGEP**)&pvData);
     if (SUCCEEDED(hr) && pvData)
     {
@@ -2161,7 +2161,7 @@ int CRhinoVariantHelpers::VariantArrayToColorArray(SAFEARRAY* psa, ON_SimpleArra
   if (SUCCEEDED(hl) && SUCCEEDED(hu))
   {
     arr.SetCapacity(upper - lower + 1);
-    VARIANT* pvData = 0;
+    VARIANT* pvData = nullptr;
     HRESULT hr = SafeArrayAccessData(psa, (void HUGEP**)&pvData);
     if (SUCCEEDED(hr) && pvData)
     {
@@ -2197,7 +2197,7 @@ bool CRhinoVariantHelpers::VariantArrayToPoint(SAFEARRAY* psa, ON_2dPoint& pt, b
   HRESULT hu = SafeArrayGetUBound(psa, 1, &upper);
   if (SUCCEEDED(hl) && SUCCEEDED(hu) && (upper - lower == 1))
   {
-    VARIANT* pvData = 0;
+    VARIANT* pvData = nullptr;
     HRESULT hr = SafeArrayAccessData(psa, (void HUGEP**)&pvData);
     if (SUCCEEDED(hr) && pvData)
     {
@@ -2240,7 +2240,7 @@ bool CRhinoVariantHelpers::VariantArrayToPoint(SAFEARRAY* psa, ON_3dPoint& pt, b
   HRESULT hu = SafeArrayGetUBound(psa, 1, &upper);
   if (SUCCEEDED(hl) && SUCCEEDED(hu) && (upper - lower == 1 || upper - lower == 2))
   {
-    VARIANT* pvData = 0;
+    VARIANT* pvData = nullptr;
     HRESULT hr = SafeArrayAccessData(psa, (void HUGEP**)&pvData);
     if (SUCCEEDED(hr) && pvData)
     {
@@ -2283,7 +2283,7 @@ bool CRhinoVariantHelpers::VariantArrayToPoint(SAFEARRAY* psa, ON_3fPoint& pt, b
   HRESULT hu = SafeArrayGetUBound(psa, 1, &upper);
   if (SUCCEEDED(hl) && SUCCEEDED(hu) && (upper - lower == 1 || upper - lower == 2))
   {
-    VARIANT* pvData = 0;
+    VARIANT* pvData = nullptr;
     HRESULT hr = SafeArrayAccessData(psa, (void HUGEP**)&pvData);
     if (SUCCEEDED(hr) && pvData)
     {
@@ -2326,7 +2326,7 @@ bool CRhinoVariantHelpers::VariantArrayToPoint(SAFEARRAY* psa, ON_4dPoint& pt, b
   HRESULT hu = SafeArrayGetUBound(psa, 1, &upper);
   if (SUCCEEDED(hl) && SUCCEEDED(hu) && (upper - lower == 2 || upper - lower == 3))
   {
-    VARIANT* pvData = 0;
+    VARIANT* pvData = nullptr;
     HRESULT hr = SafeArrayAccessData(psa, (void HUGEP**)&pvData);
     if (SUCCEEDED(hr) && pvData)
     {
@@ -2370,7 +2370,7 @@ bool CRhinoVariantHelpers::VariantArrayToPoint(SAFEARRAY* psa, ON_4fPoint& pt, b
   HRESULT hu = SafeArrayGetUBound(psa, 1, &upper);
   if (SUCCEEDED(hl) && SUCCEEDED(hu) && (upper - lower == 2 || upper - lower == 3))
   {
-    VARIANT* pvData = 0;
+    VARIANT* pvData = nullptr;
     HRESULT hr = SafeArrayAccessData(psa, (void HUGEP**)&pvData);
     if (SUCCEEDED(hr) && pvData)
     {
@@ -2463,7 +2463,7 @@ int CRhinoVariantHelpers::VariantArrayToPointArray(SAFEARRAY* psa, ON_2dPointArr
   else
   {
     arr.SetCapacity(upper - lower + 1);
-    VARIANT* pvData = 0;
+    VARIANT* pvData = nullptr;
     hr = SafeArrayAccessData(psa, (void HUGEP**)&pvData);
     if (SUCCEEDED(hr) && pvData)
     {
@@ -2539,7 +2539,7 @@ int CRhinoVariantHelpers::VariantArrayToPointArray(SAFEARRAY* psa, ON_3dPointArr
   else
   {
     arr.SetCapacity(upper - lower + 1);
-    VARIANT* pvData = 0;
+    VARIANT* pvData = nullptr;
     hr = SafeArrayAccessData(psa, (void HUGEP**)&pvData);
     if (SUCCEEDED(hr) && pvData)
     {
@@ -2615,7 +2615,7 @@ int CRhinoVariantHelpers::VariantArrayToPointArray(SAFEARRAY* psa, ON_3fPointArr
   else
   {
     arr.SetCapacity(upper - lower + 1);
-    VARIANT* pvData = 0;
+    VARIANT* pvData = nullptr;
     hr = SafeArrayAccessData(psa, (void HUGEP**)&pvData);
     if (SUCCEEDED(hr) && pvData)
     {
@@ -2692,7 +2692,7 @@ int CRhinoVariantHelpers::VariantArrayToPointArray(SAFEARRAY* psa, ON_4dPointArr
   else
   {
     arr.SetCapacity(upper - lower + 1);
-    VARIANT* pvData = 0;
+    VARIANT* pvData = nullptr;
     hr = SafeArrayAccessData(psa, (void HUGEP**)&pvData);
     if (SUCCEEDED(hr) && pvData)
     {
@@ -2769,7 +2769,7 @@ int CRhinoVariantHelpers::VariantArrayToPointArray(SAFEARRAY* psa, ON_4fPointArr
   else
   {
     arr.SetCapacity(upper - lower + 1);
-    VARIANT* pvData = 0;
+    VARIANT* pvData = nullptr;
     hr = SafeArrayAccessData(psa, (void HUGEP**)&pvData);
     if (SUCCEEDED(hr) && pvData)
     {
@@ -2802,7 +2802,7 @@ int CRhinoVariantHelpers::SafeArrayToBooleanArray(SAFEARRAY* psa, ON_SimpleArray
     {
       if (vt == VT_BOOL)
       {
-        VARIANT_BOOL* pvData = 0;
+        VARIANT_BOOL* pvData = nullptr;
         hr = SafeArrayAccessData(psa, (void HUGEP**)&pvData);
         if (SUCCEEDED(hr) && pvData)
         {
@@ -2813,7 +2813,7 @@ int CRhinoVariantHelpers::SafeArrayToBooleanArray(SAFEARRAY* psa, ON_SimpleArray
       }
       else if (vt == VT_I4)
       {
-        long* pvData = 0;
+        long* pvData = nullptr;
         hr = SafeArrayAccessData(psa, (void HUGEP**)&pvData);
         if (SUCCEEDED(hr) && pvData)
         {
@@ -2824,7 +2824,7 @@ int CRhinoVariantHelpers::SafeArrayToBooleanArray(SAFEARRAY* psa, ON_SimpleArray
       }
       else if (vt == VT_I2)
       {
-        short* pvData = 0;
+        short* pvData = nullptr;
         hr = SafeArrayAccessData(psa, (void HUGEP**)&pvData);
         if (SUCCEEDED(hr) && pvData)
         {
@@ -2835,7 +2835,7 @@ int CRhinoVariantHelpers::SafeArrayToBooleanArray(SAFEARRAY* psa, ON_SimpleArray
       }
       else if (vt == VT_R8)
       {
-        double* pvData = 0;
+        double* pvData = nullptr;
         hr = SafeArrayAccessData(psa, (void HUGEP**)&pvData);
         if (SUCCEEDED(hr) && pvData)
         {
@@ -2846,7 +2846,7 @@ int CRhinoVariantHelpers::SafeArrayToBooleanArray(SAFEARRAY* psa, ON_SimpleArray
       }
       else if (vt == VT_R4)
       {
-        float* pvData = 0;
+        float* pvData = nullptr;
         hr = SafeArrayAccessData(psa, (void HUGEP**)&pvData);
         if (SUCCEEDED(hr) && pvData)
         {
@@ -2876,7 +2876,7 @@ int CRhinoVariantHelpers::SafeArrayToIntegerArray(SAFEARRAY* psa, ON_SimpleArray
     {
       if (vt == VT_I4)
       {
-        long* pvData = 0;
+        long* pvData = nullptr;
         hr = SafeArrayAccessData(psa, (void HUGEP**)&pvData);
         if (SUCCEEDED(hr) && pvData)
         {
@@ -2887,7 +2887,7 @@ int CRhinoVariantHelpers::SafeArrayToIntegerArray(SAFEARRAY* psa, ON_SimpleArray
       }
       else if (vt == VT_I2)
       {
-        short* pvData = 0;
+        short* pvData = nullptr;
         hr = SafeArrayAccessData(psa, (void HUGEP**)&pvData);
         if (SUCCEEDED(hr) && pvData)
         {
@@ -2898,7 +2898,7 @@ int CRhinoVariantHelpers::SafeArrayToIntegerArray(SAFEARRAY* psa, ON_SimpleArray
       }
       else if (vt == VT_R8)
       {
-        double* pvData = 0;
+        double* pvData = nullptr;
         hr = SafeArrayAccessData(psa, (void HUGEP**)&pvData);
         if (SUCCEEDED(hr) && pvData)
         {
@@ -2909,7 +2909,7 @@ int CRhinoVariantHelpers::SafeArrayToIntegerArray(SAFEARRAY* psa, ON_SimpleArray
       }
       else if (vt == VT_R4)
       {
-        float* pvData = 0;
+        float* pvData = nullptr;
         hr = SafeArrayAccessData(psa, (void HUGEP**)&pvData);
         if (SUCCEEDED(hr) && pvData)
         {
@@ -2939,7 +2939,7 @@ int CRhinoVariantHelpers::SafeArrayToFloatArray(SAFEARRAY* psa, ON_SimpleArray<f
     {
       if (vt == VT_R8)
       {
-        double* pvData = 0;
+        double* pvData = nullptr;
         hr = SafeArrayAccessData(psa, (void HUGEP**)&pvData);
         if (SUCCEEDED(hr) && pvData)
         {
@@ -2950,7 +2950,7 @@ int CRhinoVariantHelpers::SafeArrayToFloatArray(SAFEARRAY* psa, ON_SimpleArray<f
       }
       else if (vt == VT_R4)
       {
-        float* pvData = 0;
+        float* pvData = nullptr;
         hr = SafeArrayAccessData(psa, (void HUGEP**)&pvData);
         if (SUCCEEDED(hr) && pvData)
         {
@@ -2961,7 +2961,7 @@ int CRhinoVariantHelpers::SafeArrayToFloatArray(SAFEARRAY* psa, ON_SimpleArray<f
       }
       else if (vt == VT_I4)
       {
-        long* pvData = 0;
+        long* pvData = nullptr;
         hr = SafeArrayAccessData(psa, (void HUGEP**)&pvData);
         if (SUCCEEDED(hr) && pvData)
         {
@@ -2972,7 +2972,7 @@ int CRhinoVariantHelpers::SafeArrayToFloatArray(SAFEARRAY* psa, ON_SimpleArray<f
       }
       else if (vt == VT_I2)
       {
-        short* pvData = 0;
+        short* pvData = nullptr;
         hr = SafeArrayAccessData(psa, (void HUGEP**)&pvData);
         if (SUCCEEDED(hr) && pvData)
         {
@@ -3002,7 +3002,7 @@ int CRhinoVariantHelpers::SafeArrayToDoubleArray(SAFEARRAY* psa, ON_SimpleArray<
     {
       if (vt == VT_R8)
       {
-        double* pvData = 0;
+        double* pvData = nullptr;
         hr = SafeArrayAccessData(psa, (void HUGEP**)&pvData);
         if (SUCCEEDED(hr) && pvData)
         {
@@ -3013,7 +3013,7 @@ int CRhinoVariantHelpers::SafeArrayToDoubleArray(SAFEARRAY* psa, ON_SimpleArray<
       }
       else if (vt == VT_R4)
       {
-        float* pvData = 0;
+        float* pvData = nullptr;
         hr = SafeArrayAccessData(psa, (void HUGEP**)&pvData);
         if (SUCCEEDED(hr) && pvData)
         {
@@ -3024,7 +3024,7 @@ int CRhinoVariantHelpers::SafeArrayToDoubleArray(SAFEARRAY* psa, ON_SimpleArray<
       }
       else if (vt == VT_I4)
       {
-        long* pvData = 0;
+        long* pvData = nullptr;
         hr = SafeArrayAccessData(psa, (void HUGEP**)&pvData);
         if (SUCCEEDED(hr) && pvData)
         {
@@ -3035,7 +3035,7 @@ int CRhinoVariantHelpers::SafeArrayToDoubleArray(SAFEARRAY* psa, ON_SimpleArray<
       }
       else if (vt == VT_I2)
       {
-        short* pvData = 0;
+        short* pvData = nullptr;
         hr = SafeArrayAccessData(psa, (void HUGEP**)&pvData);
         if (SUCCEEDED(hr) && pvData)
         {
@@ -3061,7 +3061,7 @@ int CRhinoVariantHelpers::SafeArrayToStringArray(SAFEARRAY* psa, ON_ClassArray<O
     if (SUCCEEDED(hl) && SUCCEEDED(hu))
     {
       arr.SetCapacity(upper - lower + 1);
-      BSTR* pvData = 0;
+      BSTR* pvData = nullptr;
       HRESULT hr = SafeArrayAccessData(psa, (void HUGEP**)&pvData);
       if (SUCCEEDED(hr) && pvData)
       {
@@ -3096,7 +3096,7 @@ int CRhinoVariantHelpers::SafeArrayToColorArray(SAFEARRAY* psa, ON_SimpleArray<O
       unsigned int white = RGB(255, 255, 255);
       if (vt == VT_BOOL)
       {
-        VARIANT_BOOL* pvData = 0;
+        VARIANT_BOOL* pvData = nullptr;
         hr = SafeArrayAccessData(psa, (void HUGEP**)&pvData);
         if (SUCCEEDED(hr) && pvData)
         {
@@ -3107,7 +3107,7 @@ int CRhinoVariantHelpers::SafeArrayToColorArray(SAFEARRAY* psa, ON_SimpleArray<O
       }
       else if (vt == VT_I4)
       {
-        long* pvData = 0;
+        long* pvData = nullptr;
         hr = SafeArrayAccessData(psa, (void HUGEP**)&pvData);
         if (SUCCEEDED(hr) && pvData)
         {
@@ -3118,7 +3118,7 @@ int CRhinoVariantHelpers::SafeArrayToColorArray(SAFEARRAY* psa, ON_SimpleArray<O
       }
       else if (vt == VT_I2)
       {
-        short* pvData = 0;
+        short* pvData = nullptr;
         hr = SafeArrayAccessData(psa, (void HUGEP**)&pvData);
         if (SUCCEEDED(hr) && pvData)
         {
@@ -3129,7 +3129,7 @@ int CRhinoVariantHelpers::SafeArrayToColorArray(SAFEARRAY* psa, ON_SimpleArray<O
       }
       else if (vt == VT_R8)
       {
-        double* pvData = 0;
+        double* pvData = nullptr;
         hr = SafeArrayAccessData(psa, (void HUGEP**)&pvData);
         if (SUCCEEDED(hr) && pvData)
         {
@@ -3140,7 +3140,7 @@ int CRhinoVariantHelpers::SafeArrayToColorArray(SAFEARRAY* psa, ON_SimpleArray<O
       }
       else if (vt == VT_R4)
       {
-        float* pvData = 0;
+        float* pvData = nullptr;
         hr = SafeArrayAccessData(psa, (void HUGEP**)&pvData);
         if (SUCCEEDED(hr) && pvData)
         {
