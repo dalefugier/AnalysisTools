@@ -2,6 +2,7 @@
 // Microsoft Visual C++ generated include file.
 // Used by AnalysisTools.rc
 //
+#define IDI_ICON                        100
 #define IDD_ANALYSIS_DIALOG             5000
 #define IDC_HUEBAR_BUTTON               5000
 #define IDC_RANGE1_EDIT                 5001

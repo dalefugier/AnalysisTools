@@ -1,4 +1,4 @@
-// Copyright (c) 1993-2016 Robert McNeel & Associates. All rights reserved.
+// Copyright (c) 1993-2018 Robert McNeel & Associates. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 // AnalysisDialogConduit.cpp
@@ -9,8 +9,9 @@
 
 CAnalysisDialogConduit::CAnalysisDialogConduit()
   : CRhinoDisplayConduit(CSupportChannels::SC_DRAWOBJECT | CSupportChannels::SC_PREDRAWOBJECTS, false),
-  m_dialog(0)
+  m_dialog(nullptr)
 {
+  m_color = RhinoApp().AppSettings().AppearanceSettings().SelectedObjectColor();
 }
 
 void CAnalysisDialogConduit::Attach(const CAnalysisDialog* dialog)
@@ -22,30 +23,26 @@ bool CAnalysisDialogConduit::ExecConduit(CRhinoDisplayPipeline& dp, UINT nActive
 {
   if (nActiveChannel == CSupportChannels::SC_PREDRAWOBJECTS)
   {
-    if (m_dialog)
+    if (nullptr != m_dialog)
     {
-      int i;
-      CRhinoViewport& vp = dp.GetRhinoVP();
-      if (vp.DisplayMode() == ON::wireframe_display)
+      if (!dp.DisplayAttrs()->m_bShadeSurface)
       {
-        ON_Color color = RhinoApp().AppSettings().AppearanceSettings().SelectedObjectColor();
-        for (i = 0; i < m_dialog->m_meshes.Count(); i++)
+        for (int i = 0; i < m_dialog->m_meshes.Count(); i++)
         {
           ON_Mesh* mesh = m_dialog->m_meshes[i];
-          if (mesh)
-            dp.DrawWireframeMesh(*mesh, color);
+          if (nullptr != mesh)
+            dp.DrawWireframeMesh(*mesh, m_color);
         }
       }
       else
       {
-        for (i = 0; i < m_dialog->m_meshes.Count(); i++)
+        for (int i = 0; i < m_dialog->m_meshes.Count(); i++)
         {
           ON_Mesh* mesh = m_dialog->m_meshes[i];
-          if (mesh)
+          if (nullptr != mesh)
             dp.DrawShadedMesh(*mesh);
         }
       }
-      return true;
     }
   }
 

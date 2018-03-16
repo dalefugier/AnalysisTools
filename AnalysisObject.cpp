@@ -1,4 +1,4 @@
-// Copyright (c) 1993-2016 Robert McNeel & Associates. All rights reserved.
+// Copyright (c) 1993-2018 Robert McNeel & Associates. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 // AnalysisObject.cpp
@@ -49,28 +49,6 @@ BEGIN_INTERFACE_MAP(CAnalysisObject, CCmdTarget)
   INTERFACE_PART(CAnalysisObject, IID_IAnalysisObject, Dispatch)
 END_INTERFACE_MAP()
 
-// Utilities
-static CRhinoDoc& RhinoDoc()
-{
-  CRhinoDoc* doc = RhinoApp().ActiveDoc();
-  ASSERT(doc);
-  return *doc;
-}
-
-static void  RedrawDoc()
-{
-  CRhinoDoc* doc = RhinoApp().ActiveDoc();
-  if (doc)
-    doc->Redraw();
-}
-
-static void RegenDoc()
-{
-  CRhinoDoc* doc = RhinoApp().ActiveDoc();
-  if (doc)
-    doc->Regen();
-}
-
 // CAnalysisObject message handlers
 
 VARIANT CAnalysisObject::IsAnalysisMesh(const VARIANT &vaObject)
@@ -79,16 +57,17 @@ VARIANT CAnalysisObject::IsAnalysisMesh(const VARIANT &vaObject)
   VariantInit(&vaResult);
   V_VT(&vaResult) = VT_NULL;
 
-  ON_wString object_str;
-  if (!CRhinoCom::VariantToString(vaObject, object_str))
+  CRhinoObjRef object_ref;
+  if (!CRhinoVariantHelpers::ConvertVariant(vaObject, object_ref))
+    return vaResult;
+
+  const ON_Mesh* mesh = object_ref.Mesh();
+  if (nullptr == mesh)
     return vaResult;
 
   V_VT(&vaResult) = VT_BOOL;
-  vaResult.boolVal = VARIANT_FALSE;
-
-  const ON_Mesh* mesh = CRhinoCom::RhinoMesh(object_str);
-  if (mesh && CAnalysisUserData::Get(mesh))
-    vaResult.boolVal = VARIANT_TRUE;
+  const CAnalysisUserData* ud = CAnalysisUserData::Get(mesh);
+  vaResult.boolVal = (nullptr != ud) ? VARIANT_TRUE : VARIANT_FALSE;
 
   return vaResult;
 }
@@ -99,25 +78,28 @@ VARIANT CAnalysisObject::AddAnalysisMesh(const VARIANT& vaVertices, const VARIAN
   VariantInit(&vaResult);
   V_VT(&vaResult) = VT_NULL;
 
+  CRhinoDoc* doc = CRhinoVariantHelpers::Document();
+  if (nullptr == doc)
+    return vaResult;
+
   ON_3fPointArray vertices;
-  if (!CRhinoCom::VariantToPointArray(vaVertices, vertices))
+  if (!CRhinoVariantHelpers::ConvertVariant(vaVertices, vertices))
     return vaResult;
 
   ON_4fPointArray faces;
-  if (!CRhinoCom::VariantToPointArray(vaFaces, faces))
+  if (!CRhinoVariantHelpers::ConvertVariant(vaFaces, faces))
     return vaResult;
 
   ON_SimpleArray<double> data;
-  if (!CRhinoCom::VariantToArray(vaData, data) || data.Count() != vertices.Count())
+  if (!CRhinoVariantHelpers::ConvertVariant(vaData, data) || data.Count() != vertices.Count())
     return vaResult;
 
   ON_Mesh* mesh = new ON_Mesh(faces.Count(), vertices.Count(), false, false);
 
-  int i;
-  for (i = 0; i < vertices.Count(); i++)
+  for (int i = 0; i < vertices.Count(); i++)
     mesh->SetVertex(i, vertices[i]);
 
-  for (i = 0; i < faces.Count(); i++)
+  for (int i = 0; i < faces.Count(); i++)
   {
     ON_4fPoint face = faces[i];
     if (face.z == face.w)
@@ -127,6 +109,7 @@ VARIANT CAnalysisObject::AddAnalysisMesh(const VARIANT& vaVertices, const VARIAN
   }
 
   mesh->ComputeVertexNormals();
+  mesh->Compact();
 
   if (mesh->IsValid())
   {
@@ -153,12 +136,12 @@ VARIANT CAnalysisObject::AddAnalysisMesh(const VARIANT& vaVertices, const VARIAN
       if (mesh_object)
       {
         mesh_object->SetMesh(mesh);
-        if (RhinoDoc().AddObject(mesh_object))
+        if (doc->AddObject(mesh_object))
         {
-          CString str = CRhinoCom::UUIDToString(mesh_object->Attributes().m_uuid);
+          CString str = CRhinoVariantHelpers::StringFromUuid(mesh_object->ModelObjectId());
           V_VT(&vaResult) = VT_BSTR;
           vaResult.bstrVal = str.AllocSysString();
-          RegenDoc();
+          doc->Regen();
         }
         else
           delete mesh_object;
@@ -179,21 +162,21 @@ VARIANT CAnalysisObject::AnalysisMeshData(const VARIANT& vaObject, const VARIANT
   VariantInit(&vaResult);
   V_VT(&vaResult) = VT_NULL;
 
-  ON_wString object_str;
-  if (!CRhinoCom::VariantToString(vaObject, object_str))
+  CRhinoObjRef object_ref;
+  if (!CRhinoVariantHelpers::ConvertVariant(vaObject, object_ref))
     return vaResult;
 
-  ON_Mesh* mesh = const_cast<ON_Mesh*>(CRhinoCom::RhinoMesh(object_str));
-  if (0 == mesh)
+  ON_Mesh* mesh = const_cast<ON_Mesh*>(object_ref.Mesh());
+  if (nullptr == mesh)
     return vaResult;
 
   ON_SimpleArray<double> old_data;
   CAnalysisUserData* ud = const_cast<CAnalysisUserData*>(CAnalysisUserData::Get(mesh));
-  if (ud)
+  if (nullptr != ud)
     old_data = ud->m_a;
 
   ON_SimpleArray<double> new_data;
-  if (CRhinoCom::VariantToArray(vaData, new_data) && new_data.Count() == mesh->VertexCount())
+  if (CRhinoVariantHelpers::ConvertVariant(vaData, new_data) && new_data.Count() == mesh->VertexCount())
   {
     bool bAttach = false;
     if (0 == ud)
@@ -223,14 +206,14 @@ VARIANT CAnalysisObject::AnalysisMeshData(const VARIANT& vaObject, const VARIANT
 
       CAnalysisUserData::UpdateColors(mesh);
 
-      RegenDoc();
+      CRhinoVariantHelpers::RegenDocument();
     }
   }
 
   if (old_data.Count())
   {
     COleSafeArray sa;
-    if (CRhinoCom::DoubleArrayToSafeArray(old_data, sa))
+    if (CRhinoVariantHelpers::CreateSafeArray(old_data, sa))
       return sa.Detach();
   }
 
@@ -243,29 +226,31 @@ VARIANT CAnalysisObject::AnalysisMeshDisplayRange(const VARIANT& vaObject, const
   VariantInit(&vaResult);
   V_VT(&vaResult) = VT_NULL;
 
-  ON_wString object_str;
-  if (!CRhinoCom::VariantToString(vaObject, object_str))
+  CRhinoObjRef object_ref;
+  if (!CRhinoVariantHelpers::ConvertVariant(vaObject, object_ref))
     return vaResult;
 
-  ON_Mesh* mesh = const_cast<ON_Mesh*>(CRhinoCom::RhinoMesh(object_str));
-  if (0 == mesh)
+  ON_Mesh* mesh = const_cast<ON_Mesh*>(object_ref.Mesh());
+  if (nullptr == mesh)
     return vaResult;
 
   CAnalysisUserData* ud = const_cast<CAnalysisUserData*>(CAnalysisUserData::Get(mesh));
-  if (0 == ud)
+  if (nullptr == ud)
     return vaResult;
 
   ON_2dPoint old_range(ud->m_redblue[0], ud->m_redblue[1]);
+
   ON_2dPoint new_range;
-  if (CRhinoCom::VariantToPoint(vaRange, new_range) && new_range != old_range)
+  if (CRhinoVariantHelpers::ConvertVariant(vaRange, new_range) && new_range != old_range)
   {
     ud->m_redblue.Set(new_range.x, new_range.y);
     CAnalysisUserData::UpdateColors(mesh);
-    RegenDoc();
+    CRhinoVariantHelpers::RegenDocument();
   }
 
   COleSafeArray sa;
-  CRhinoCom::PointToSafeArray(old_range, sa);
+  CRhinoVariantHelpers::CreateSafeArray(old_range, sa);
+
   return sa.Detach();
 }
 
@@ -275,21 +260,22 @@ VARIANT CAnalysisObject::AnalysisMeshDataRange(const VARIANT& vaObject)
   VariantInit(&vaResult);
   V_VT(&vaResult) = VT_NULL;
 
-  ON_wString object_str;
-  if (!CRhinoCom::VariantToString(vaObject, object_str))
+  CRhinoObjRef object_ref;
+  if (!CRhinoVariantHelpers::ConvertVariant(vaObject, object_ref))
     return vaResult;
 
-  const ON_Mesh* mesh = CRhinoCom::RhinoMesh(object_str);
-  if (0 == mesh)
+  const ON_Mesh* mesh = object_ref.Mesh();
+  if (nullptr == mesh)
     return vaResult;
 
   const CAnalysisUserData* ud = CAnalysisUserData::Get(mesh);
-  if (0 == ud)
+  if (nullptr == ud)
     return vaResult;
 
-  ON_2dPoint old_range(ud->m_minmax[0], ud->m_minmax[1]);
-
+  ON_2dPoint range(ud->m_minmax[0], ud->m_minmax[1]);
+  
   COleSafeArray sa;
-  CRhinoCom::PointToSafeArray(old_range, sa);
+  CRhinoVariantHelpers::CreateSafeArray(range, sa);
+
   return sa.Detach();
 }

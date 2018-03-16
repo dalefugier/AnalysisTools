@@ -1,4 +1,4 @@
-// Copyright (c) 1993-2016 Robert McNeel & Associates. All rights reserved.
+// Copyright (c) 1993-2018 Robert McNeel & Associates. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 // AnalysisDialog.h
@@ -13,17 +13,17 @@ class CAnalysisDialog : public CRhinoDialog
   DECLARE_DYNAMIC(CAnalysisDialog)
 
 public:
-  CAnalysisDialog(CWnd* pParent = NULL);   // standard constructor
+  CAnalysisDialog(CRhinoDoc& doc, CWnd* pParent = nullptr);   // standard constructor
   virtual ~CAnalysisDialog();
 
   // Dialog Data
   enum { IDD = IDD_ANALYSIS_DIALOG };
   CButton m_huebar_button;
-  CRhinoUiEditReal m_range1_edit;
-  CRhinoUiEditReal m_range2_edit;
+  CRhinoUiEdit m_range1_edit;
+  CRhinoUiEdit m_range2_edit;
   CStatic m_midrange_static;
 
-  CRhinoUiDib m_huebar_dib;
+  CRhinoDib m_huebar_dib;
   double m_range1;
   double m_range2;
 

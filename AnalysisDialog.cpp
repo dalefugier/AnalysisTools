@@ -1,4 +1,4 @@
-// Copyright (c) 1993-2016 Robert McNeel & Associates. All rights reserved.
+// Copyright (c) 1993-2018 Robert McNeel & Associates. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 // AnalysisDialog.cpp
@@ -17,10 +17,11 @@ static double GOOD_COLOR_HUE = ON_PI * 4.0 / 3.0; // blue
 
 IMPLEMENT_DYNAMIC(CAnalysisDialog, CRhinoDialog)
 
-CAnalysisDialog::CAnalysisDialog(CWnd* pParent)
+CAnalysisDialog::CAnalysisDialog(CRhinoDoc& doc, CWnd* pParent)
   : CRhinoDialog(CAnalysisDialog::IDD, pParent)
 {
-  SetEnableDisplayCommands(TRUE);
+  SetEnableDisplayCommands(true, doc.RuntimeSerialNumber());
+  SetAllowEscapeAndEnter(false);
 
   m_range1 = m_range2 = 0.0;
   m_range1_timer_on = m_range2_timer_on = false;

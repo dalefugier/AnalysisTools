@@ -1,6 +1,6 @@
 ; AnalysisTools.def : Declares the module parameters for the DLL.
 
-; LIBRARY      "AnalysisTools"
+LIBRARY
 
 EXPORTS
     ; Explicit exports can go here

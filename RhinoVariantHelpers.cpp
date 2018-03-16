@@ -1,4 +1,4 @@
-// Copyright (c) 1993-2016 Robert McNeel & Associates. All rights reserved.
+// Copyright (c) 1993-2018 Robert McNeel & Associates. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 // RhinoVariantHelpers.cpp
@@ -6,221 +6,122 @@
 #include "StdAfx.h"
 #include "RhinoVariantHelpers.h"
 
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-
-void CRhinoCom::ThrowOleDispatchException(exception_type type)
+CRhinoDoc* CRhinoVariantHelpers::Document()
 {
-  AFX_MANAGE_STATE(AfxGetStaticModuleState());
-
-  ON_wString err;
-  switch (type)
-  {
-  case err_boolean_required:
-    err = RHSTR(L"Boolean required.");
-    break;
-  case err_short_required:
-    err = RHSTR(L"Short integer required.");
-    break;
-  case err_long_requried:
-    err = RHSTR(L"Long integer required.");
-    break;
-  case err_integer_required:
-    err = RHSTR(L"Integer required.");
-    break;
-  case err_float_required:
-    err = RHSTR(L"Float required.");
-    break;
-  case err_double_required:
-    err = RHSTR(L"Double required.");
-    break;
-  case err_string_required:
-    err = RHSTR(L"String required.");
-    break;
-  case err_point_required:
-    err = RHSTR(L"Point required.");
-    break;
-  case err_uuid_required:
-    err = RHSTR(L"Identifier required.");
-    break;
-  case err_array_required:
-    err = RHSTR(L"Array required.");
-    break;
-  case err_array_one_dim_required:
-    err = RHSTR(L"One-dimensional array required.");
-    break;
-  case err_array_two_dim_required:
-    err = RHSTR(L"Two-dimensional array required.");
-    break;
-  case err_boolean_array_required:
-    err = RHSTR(L"Array of booleans required.");
-    break;
-  case err_short_array_required:
-    err = RHSTR(L"Array of short integers required.");
-    break;
-  case err_long_array_requried:
-    err = RHSTR(L"Array of long integers required.");
-    break;
-  case err_integer_array_required:
-    err = RHSTR(L"Array of integers required.");
-    break;
-  case err_float_array_required:
-    err = RHSTR(L"Array of floats required.");
-    break;
-  case err_double_array_required:
-    err = RHSTR(L"Array of doubles required.");
-    break;
-  case err_string_array_required:
-    err = RHSTR(L"Array of string required.");
-    break;
-  case err_point_array_required:
-    err = RHSTR(L"Array of points required.");
-    break;
-  case err_uuid_array_required:
-    err = RHSTR(L"Array of identifier required.");
-    break;
-  case err_unknown:
-  default:
-    break;
-  }
-
-  ON_wString msg;
-  msg.Format(RHSTR(L"Type mismatch in parameter. %s"), err);
-
-  ::AfxThrowOleDispatchException(type, msg);
+  return RhinoApp().ActiveDoc();
 }
 
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-
-CRhinoObject* CRhinoCom::RhinoObject(const wchar_t* wstr)
+void CRhinoVariantHelpers::RedrawDocument()
 {
-  CRhinoDoc* doc = RhinoApp().ActiveDoc();
-  if (0 == doc)
-    return 0;
+  CRhinoDoc* doc = Document();
+  if (nullptr != doc)
+    doc->Redraw();
+}
 
-  ON_wString str(wstr);
+void CRhinoVariantHelpers::RegenDocument()
+{
+  CRhinoDoc* doc = Document();
+  if (nullptr != doc)
+    doc->Regen();
+}
+
+bool CRhinoVariantHelpers::StringToUuid(const wchar_t* uuid_str, ON_UUID& uuid)
+{
+  bool rc = false;
+  if (uuid_str && uuid_str[0])
+  {
+    ON_wString str(uuid_str);
+    str.TrimLeftAndRight();
+    if (str.Length())
+    {
+      ON_UUID temp_uuid = ON_UuidFromString(str);
+      if (ON_UuidIsNotNil(temp_uuid))
+      {
+        uuid = temp_uuid;
+        rc = true;
+      }
+    }
+  }
+  return rc;
+}
+
+CString CRhinoVariantHelpers::StringFromUuid(const ON_UUID& uuid)
+{
+  CString str;
+  StringFromUuid(uuid, str);
+  return str;
+}
+
+bool CRhinoVariantHelpers::StringFromUuid(const ON_UUID& uuid, CString& uuid_str)
+{
+  bool rc = false;
+  ON_wString str;
+  if (StringFromUuid(uuid, str))
+  {
+    uuid_str = str;
+    rc = true;
+  }
+  return rc;
+}
+
+bool CRhinoVariantHelpers::StringFromUuid(const ON_UUID& uuid, ON_wString& uuid_str)
+{
+  bool rc = false;
+  if (ON_UuidToString(uuid, uuid_str))
+    rc = true;
+  return rc;
+}
+
+int CRhinoVariantHelpers::UuidArrayToStringArray(const ON_SimpleArray<ON_UUID>& uuids, ON_ClassArray<ON_wString>& strings)
+{
+  int i;
+  for (i = 0; i < uuids.Count(); i++)
+  {
+    ON_wString uuid_str;
+    if (ON_UuidToString(uuids[i], uuid_str))
+      strings.Append(uuid_str);
+  }
+  return strings.Count();
+}
+
+int CRhinoVariantHelpers::UuidArrayToStringArray(const ON_SimpleArray<ON_UUID>& uuids, CStringArray& strings)
+{
+  int i;
+  for (i = 0; i < uuids.Count(); i++)
+  {
+    CString uuid_str;
+    if (StringFromUuid(uuids[i], uuid_str))
+      strings.Add(uuid_str);
+  }
+  return (int)strings.GetCount();
+}
+
+bool CRhinoVariantHelpers::RhinoObjRef(const wchar_t* uuid_str, CRhinoObjRef& obj_ref)
+{
+  CRhinoDoc* doc = Document();
+  if (nullptr == doc || nullptr == uuid_str || 0 == uuid_str[0])
+    return false;
+
+  ON_wString str(uuid_str);
   str.TrimLeftAndRight();
   if (str.IsEmpty())
-    return 0;
+    return false;
 
   ON_UUID uuid = ON_UuidFromString(str);
-
-  CRhinoObject* obj = doc->LookupObject(uuid);
-  if (obj)
-    return obj;
-
-  CRhinoObjectIterator it(CRhinoObjectIterator::undeleted_objects, CRhinoObjectIterator::active_and_reference_objects);
-  it.IncludeLights();
-  for (obj = it.First(); obj; obj = it.Next())
+  if (ON_UuidIsNotNil(uuid))
   {
-    if (ON_UuidCompare(&uuid, &obj->Attributes().m_uuid) == 0)
-      return obj;
+    const CRhinoObject* obj = CRhinoObject::FromId(doc->RuntimeSerialNumber(), uuid);
+    if (nullptr != obj)
+    {
+      obj_ref = CRhinoObjRef(obj);
+      return true;
+    }
   }
 
-  return 0;
+  return false;
 }
 
-const ON_Curve* CRhinoCom::RhinoCurve(const wchar_t* wstr)
-{
-  const ON_Curve* crv = 0;
-  CRhinoObject* obj = RhinoObject(wstr);
-  if (obj)
-  {
-    CRhinoObjRef objref(obj);
-    crv = objref.Curve();
-  }
-  return crv;
-}
-
-const ON_Surface* CRhinoCom::RhinoSurface(const wchar_t* wstr)
-{
-  const ON_Surface* srf = 0;
-  CRhinoObject* obj = RhinoObject(wstr);
-  if (obj)
-  {
-    CRhinoObjRef objref(obj);
-    srf = objref.Surface();
-  }
-  return srf;
-}
-
-const ON_BrepFace* CRhinoCom::RhinoFace(const wchar_t* wstr)
-{
-  const ON_BrepFace* face = 0;
-  CRhinoObject* obj = RhinoObject(wstr);
-  if (obj)
-  {
-    CRhinoObjRef objref(obj);
-    face = objref.Face();
-  }
-  return face;
-}
-
-const ON_Brep* CRhinoCom::RhinoBrep(const wchar_t* wstr)
-{
-  const ON_Brep* brep = 0;
-  CRhinoObject* obj = RhinoObject(wstr);
-  if (obj)
-  {
-    CRhinoObjRef objref(obj);
-    brep = objref.Brep();
-  }
-  return brep;
-}
-
-const ON_Mesh* CRhinoCom::RhinoMesh(const wchar_t* wstr)
-{
-  const ON_Mesh* mesh = 0;
-  CRhinoObject* obj = RhinoObject(wstr);
-  if (obj)
-  {
-    CRhinoObjRef objref(obj);
-    mesh = objref.Mesh();
-  }
-  return mesh;
-}
-
-const ON_Point* CRhinoCom::RhinoPoint(const wchar_t* wstr)
-{
-  const ON_Point* point = 0;
-  CRhinoObject* obj = RhinoObject(wstr);
-  if (obj)
-  {
-    CRhinoObjRef objref(obj);
-    point = objref.Point();
-  }
-  return point;
-}
-
-const ON_PointCloud* CRhinoCom::RhinoPointCloud(const wchar_t* wstr)
-{
-  const ON_PointCloud* cloud = 0;
-  CRhinoObject* obj = RhinoObject(wstr);
-  if (obj)
-  {
-    CRhinoObjRef objref(obj);
-    cloud = objref.PointCloud();
-  }
-  return cloud;
-}
-
-const ON_Annotation2* CRhinoCom::RhinoAnnotation(const wchar_t* wstr)
-{
-  const ON_Annotation2* annotation = 0;
-  CRhinoObject* obj = RhinoObject(wstr);
-  if (obj)
-  {
-    CRhinoObjRef objref(obj);
-    annotation = objref.Annotation();
-  }
-  return annotation;
-}
-
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-
-bool CRhinoCom::IsVariantEmpty(const VARIANT& va)
+bool CRhinoVariantHelpers::IsVariantEmpty(const VARIANT& va)
 {
   bool rc = false;
 
@@ -239,7 +140,7 @@ bool CRhinoCom::IsVariantEmpty(const VARIANT& va)
   return rc;
 }
 
-bool CRhinoCom::IsVariantNull(const VARIANT& va)
+bool CRhinoVariantHelpers::IsVariantNull(const VARIANT& va)
 {
   bool rc = false;
 
@@ -258,7 +159,12 @@ bool CRhinoCom::IsVariantNull(const VARIANT& va)
   return rc;
 }
 
-bool CRhinoCom::IsVariantBoolean(const VARIANT& va)
+bool CRhinoVariantHelpers::IsVariantNullOrEmpty(const VARIANT& va)
+{
+  return IsVariantNull(va) || IsVariantEmpty(va);
+}
+
+bool CRhinoVariantHelpers::IsVariantBoolean(const VARIANT& va)
 {
   bool rc = false;
 
@@ -275,7 +181,7 @@ bool CRhinoCom::IsVariantBoolean(const VARIANT& va)
   return rc;
 }
 
-bool CRhinoCom::IsVariantInteger(const VARIANT& va)
+bool CRhinoVariantHelpers::IsVariantInteger(const VARIANT& va)
 {
   bool rc = false;
 
@@ -292,7 +198,7 @@ bool CRhinoCom::IsVariantInteger(const VARIANT& va)
   return rc;
 }
 
-bool CRhinoCom::IsVariantDouble(const VARIANT& va)
+bool CRhinoVariantHelpers::IsVariantDouble(const VARIANT& va)
 {
   bool rc = false;
 
@@ -309,7 +215,7 @@ bool CRhinoCom::IsVariantDouble(const VARIANT& va)
   return rc;
 }
 
-bool CRhinoCom::IsVariantNumber(const VARIANT& va)
+bool CRhinoVariantHelpers::IsVariantNumber(const VARIANT& va)
 {
   bool rc = false;
 
@@ -326,7 +232,7 @@ bool CRhinoCom::IsVariantNumber(const VARIANT& va)
   return rc;
 }
 
-bool CRhinoCom::IsVariantString(const VARIANT& va)
+bool CRhinoVariantHelpers::IsVariantString(const VARIANT& va)
 {
   bool rc = false;
 
@@ -343,7 +249,7 @@ bool CRhinoCom::IsVariantString(const VARIANT& va)
   return rc;
 }
 
-bool CRhinoCom::IsVariantPoint(const VARIANT& va)
+bool CRhinoVariantHelpers::IsVariantPoint(const VARIANT& va)
 {
   if (va.vt == VT_ERROR && va.scode == DISP_E_PARAMNOTFOUND)
     return false;
@@ -370,16 +276,11 @@ bool CRhinoCom::IsVariantPoint(const VARIANT& va)
   ON_3dPoint pt;
   if (psa->fFeatures & FADF_VARIANT)
     return VariantArrayToPoint(psa, pt, true);
-  else
-    return SafeArrayToPoint(psa, pt);
 
-  return false;
+  return SafeArrayToPoint(psa, pt);
 }
 
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-
-bool CRhinoCom::VariantToBoolean(const VARIANT& va, bool& b, bool bQuiet)
+bool CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, bool& b, bool bQuiet)
 {
   if (va.vt == VT_ERROR && va.scode == DISP_E_PARAMNOTFOUND)
     return false;
@@ -388,223 +289,102 @@ bool CRhinoCom::VariantToBoolean(const VARIANT& va, bool& b, bool bQuiet)
   while (pva->vt == (VT_BYREF | VT_VARIANT))
     pva = pva->pvarVal;
 
+  VARIANT_BOOL boolOut = VARIANT_TRUE;
   switch (pva->vt)
   {
   case VT_BOOL:
-    b = (pva->boolVal ? true : false);
+    boolOut = pva->boolVal;
     break;
+
   case VT_I2:
-    b = (pva->iVal ? true : false);
+    VarBoolFromI2(pva->iVal, &boolOut);
     break;
+
   case VT_I4:
-    b = (pva->lVal ? true : false);
+    VarBoolFromI4(pva->lVal, &boolOut);
     break;
+
   case VT_R4:
-    b = (pva->fltVal ? true : false);
+    VarBoolFromR4(pva->fltVal, &boolOut);
     break;
+
   case VT_R8:
-    b = (pva->dblVal ? true : false);
+    VarBoolFromR8(pva->dblVal, &boolOut);
     break;
-  default:
-  {
-    if (false == bQuiet)
-      ThrowOleDispatchException(err_boolean_required);
-  }
-  return false;
-  }
 
-  return true;
-}
-
-bool CRhinoCom::VariantToBoolean(const VARIANT& va, BOOL& b, bool bQuiet)
-{
-  if (va.vt == VT_ERROR && va.scode == DISP_E_PARAMNOTFOUND)
-    return false;
-
-  const VARIANT* pva = &va;
-  while (pva->vt == (VT_BYREF | VT_VARIANT))
-    pva = pva->pvarVal;
-
-  switch (pva->vt)
-  {
-  case VT_BOOL:
-    b = (pva->boolVal ? TRUE : FALSE);
-    break;
-  case VT_I2:
-    b = (pva->iVal ? TRUE : FALSE);
-    break;
-  case VT_I4:
-    b = (pva->lVal ? TRUE : FALSE);
-    break;
-  case VT_R4:
-    b = (pva->fltVal ? TRUE : FALSE);
-    break;
-  case VT_R8:
-    b = (pva->dblVal ? TRUE : FALSE);
-    break;
-  default:
-  {
-    if (false == bQuiet)
-      ThrowOleDispatchException(err_boolean_required);
-  }
-  return false;
-  }
-
-  return true;
-}
-
-bool CRhinoCom::VariantToInteger(const VARIANT& va, int& n, bool bQuiet)
-{
-  if (va.vt == VT_ERROR && va.scode == DISP_E_PARAMNOTFOUND)
-    return false;
-
-  const VARIANT* pva = &va;
-  while (pva->vt == (VT_BYREF | VT_VARIANT))
-    pva = pva->pvarVal;
-
-  switch (pva->vt)
-  {
-  case VT_BOOL:
-    n = (pva->boolVal ? (int)TRUE : (int)FALSE);
-    break;
-  case VT_I2:
-    n = (int)pva->iVal;
-    break;
-  case VT_I4:
-    n = (int)pva->lVal;
-    break;
-  case VT_R4:
-    n = (int)pva->fltVal;
-    break;
-  case VT_R8:
-    n = (int)pva->dblVal;
-    break;
-  default:
-  {
-    if (false == bQuiet)
-      ThrowOleDispatchException(err_integer_required);
-  }
-  return false;
-  }
-
-  return true;
-}
-
-bool CRhinoCom::VariantToFloat(const VARIANT& va, float& f, bool bQuiet)
-{
-  if (va.vt == VT_ERROR && va.scode == DISP_E_PARAMNOTFOUND)
-    return false;
-
-  const VARIANT* pva = &va;
-  while (pva->vt == (VT_BYREF | VT_VARIANT))
-    pva = pva->pvarVal;
-
-  switch (pva->vt)
-  {
-  case VT_BOOL:
-    f = pva->boolVal ? (float)VARIANT_TRUE : (float)VARIANT_FALSE;
-    break;
-  case VT_I2:
-    f = (float)pva->iVal;
-    break;
-  case VT_I4:
-    f = (float)pva->lVal;
-    break;
-  case VT_R4:
-    f = (float)pva->fltVal;
-    break;
-  case VT_R8:
-    f = (float)pva->dblVal;
-    break;
-  default:
-  {
-    if (false == bQuiet)
-      ThrowOleDispatchException(err_float_required);
-  }
-  return false;
-  }
-
-  return true;
-}
-
-bool CRhinoCom::VariantToDouble(const VARIANT& va, double& d, bool bQuiet)
-{
-  if (va.vt == VT_ERROR && va.scode == DISP_E_PARAMNOTFOUND)
-    return false;
-
-  const VARIANT* pva = &va;
-  while (pva->vt == (VT_BYREF | VT_VARIANT))
-    pva = pva->pvarVal;
-
-  switch (pva->vt)
-  {
-  case VT_BOOL:
-    d = pva->boolVal ? (double)VARIANT_TRUE : (double)VARIANT_FALSE;
-    break;
-  case VT_I2:
-    d = (double)pva->iVal;
-    break;
-  case VT_I4:
-    d = (double)pva->lVal;
-    break;
-  case VT_R4:
-    d = (double)pva->fltVal;
-    break;
-  case VT_R8:
-    d = (double)pva->dblVal;
-    break;
-  default:
-  {
-    if (false == bQuiet)
-      ThrowOleDispatchException(err_float_required);
-  }
-  return false;
-  }
-
-  return true;
-}
-
-bool CRhinoCom::VariantToString(const VARIANT& va, CString& str, bool bQuiet)
-{
-  if (va.vt == VT_ERROR && va.scode == DISP_E_PARAMNOTFOUND)
-    return false;
-
-  const VARIANT* pva = &va;
-  while (pva->vt == (VT_BYREF | VT_VARIANT))
-    pva = pva->pvarVal;
-
-  switch (pva->vt)
-  {
-  case VT_BOOL:
-    str = pva->boolVal == VARIANT_TRUE ? RHSTR(L"True") : RHSTR(L"False");
-    break;
-  case VT_I2:
-    str.Format(L"%d", pva->iVal);
-    break;
-  case VT_I4:
-    str.Format(L"%d", pva->lVal);
-    break;
-  case VT_R4:
-    str.Format(L"%f", pva->fltVal);
-    break;
-  case VT_R8:
-    str.Format(L"%g", pva->dblVal);
-    break;
   case VT_BSTR:
-    str = pva->bstrVal;
+    VarBoolFromStr(pva->bstrVal, LOCALE_INVARIANT, 0, &boolOut);
     break;
+
+  case VT_DATE:
+    VarBoolFromDate(pva->date, &boolOut);
+    break;
+
   default:
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_string_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_boolean_required);
   }
   return false;
   }
+  b = (boolOut ? true : false);
 
   return true;
 }
 
-bool CRhinoCom::VariantToString(const VARIANT& va, ON_wString& str, bool bQuiet)
+bool CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, int& n, bool bQuiet)
+{
+  if (va.vt == VT_ERROR && va.scode == DISP_E_PARAMNOTFOUND)
+    return false;
+
+  const VARIANT* pva = &va;
+  while (pva->vt == (VT_BYREF | VT_VARIANT))
+    pva = pva->pvarVal;
+
+  long l = 0;
+  switch (pva->vt)
+  {
+  case VT_BOOL:
+    VarI4FromBool(pva->boolVal, &l);
+    break;
+
+  case VT_I2:
+    VarI4FromI2(pva->iVal, &l);
+    break;
+
+  case VT_I4:
+    l = pva->lVal;
+    break;
+
+  case VT_R4:
+    VarI4FromR4(pva->fltVal, &l);
+    break;
+
+  case VT_R8:
+    VarI4FromR8(pva->dblVal, &l);
+    break;
+
+  case VT_BSTR:
+    VarI4FromStr(pva->bstrVal, LOCALE_INVARIANT, 0, &l);
+    break;
+
+  case VT_DATE:
+    VarI4FromDate(pva->date, &l);
+    break;
+
+  default:
+  {
+    if (false == bQuiet)
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_float_required);
+  }
+  return false;
+  }
+  n = (int)l;
+
+  return true;
+}
+
+bool CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, float& f, bool bQuiet)
 {
   if (va.vt == VT_ERROR && va.scode == DISP_E_PARAMNOTFOUND)
     return false;
@@ -616,27 +396,37 @@ bool CRhinoCom::VariantToString(const VARIANT& va, ON_wString& str, bool bQuiet)
   switch (pva->vt)
   {
   case VT_BOOL:
-    str = pva->boolVal == VARIANT_TRUE ? RHSTR(L"True") : RHSTR(L"False");
+    VarR4FromBool(pva->boolVal, &f);
     break;
+
   case VT_I2:
-    str.Format(L"%d", pva->iVal);
+    VarR4FromI2(pva->iVal, &f);
     break;
+
   case VT_I4:
-    str.Format(L"%d", pva->lVal);
+    VarR4FromI4(pva->lVal, &f);
     break;
+
   case VT_R4:
-    str.Format(L"%f", pva->fltVal);
+    f = pva->fltVal;
     break;
+
   case VT_R8:
-    str.Format(L"%g", pva->dblVal);
+    VarR4FromR8(pva->dblVal, &f);
     break;
+
   case VT_BSTR:
-    str = pva->bstrVal;
+    VarR4FromStr(pva->bstrVal, LOCALE_INVARIANT, 0, &f);
     break;
+
+  case VT_DATE:
+    VarR4FromDate(pva->date, &f);
+    break;
+
   default:
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_string_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_float_required);
   }
   return false;
   }
@@ -644,10 +434,117 @@ bool CRhinoCom::VariantToString(const VARIANT& va, ON_wString& str, bool bQuiet)
   return true;
 }
 
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
+bool CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, double& d, bool bQuiet)
+{
+  if (va.vt == VT_ERROR && va.scode == DISP_E_PARAMNOTFOUND)
+    return false;
 
-int CRhinoCom::VariantToArray(const VARIANT& va, ON_SimpleArray<bool>& arr, bool bQuiet)
+  const VARIANT* pva = &va;
+  while (pva->vt == (VT_BYREF | VT_VARIANT))
+    pva = pva->pvarVal;
+
+  switch (pva->vt)
+  {
+  case VT_BOOL:
+    VarR8FromBool(pva->boolVal, &d);
+    break;
+
+  case VT_I2:
+    VarR8FromI2(pva->iVal, &d);
+    break;
+
+  case VT_I4:
+    VarR8FromI4(pva->lVal, &d);
+    break;
+
+  case VT_R4:
+    VarR8FromR4(pva->fltVal, &d);
+    break;
+
+  case VT_R8:
+    d = pva->dblVal;
+    break;
+
+  case VT_BSTR:
+    VarR8FromStr(pva->bstrVal, LOCALE_INVARIANT, 0, &d);
+    break;
+
+  case VT_DATE:
+    VarR8FromDate(pva->date, &d);
+    break;
+
+  default:
+  {
+    if (false == bQuiet)
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_float_required);
+  }
+  return false;
+  }
+
+  return true;
+}
+
+bool CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_wString& str, bool bQuiet)
+{
+  if (va.vt == VT_ERROR && va.scode == DISP_E_PARAMNOTFOUND)
+    return false;
+
+  const VARIANT* pva = &va;
+  while (pva->vt == (VT_BYREF | VT_VARIANT))
+    pva = pva->pvarVal;
+
+  CComBSTR bstr;
+  switch (pva->vt)
+  {
+  case VT_BOOL:
+    VarBstrFromBool(pva->boolVal, LOCALE_INVARIANT, 0, &bstr);
+    break;
+
+  case VT_I2:
+    VarBstrFromI2(pva->iVal, LOCALE_INVARIANT, 0, &bstr);
+    break;
+
+  case VT_I4:
+    VarBstrFromI4(pva->lVal, LOCALE_INVARIANT, 0, &bstr);
+    str = bstr;
+    break;
+
+  case VT_UINT:
+    VarBstrFromUint(pva->lVal, LOCALE_INVARIANT, 0, &bstr);
+    str = bstr;
+    break;
+
+  case VT_R4:
+    VarBstrFromR4(pva->fltVal, LOCALE_INVARIANT, 0, &bstr);
+    str = bstr;
+    break;
+
+  case VT_R8:
+    VarBstrFromR8(pva->dblVal, LOCALE_INVARIANT, 0, &bstr);
+    str = bstr;
+    break;
+
+  case VT_BSTR:
+    bstr = pva->bstrVal;
+    break;
+
+  case VT_DATE:
+    VarBstrFromDate(pva->date, LOCALE_INVARIANT, 0, &bstr);
+    break;
+
+  default:
+  {
+    if (false == bQuiet)
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_string_required);
+  }
+  return false;
+  }
+  str = bstr;
+
+  return true;
+}
+
+int CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_SimpleArray<bool>& arr, bool bQuiet)
 {
   if (va.vt == VT_ERROR && va.scode == DISP_E_PARAMNOTFOUND)
     return 0;
@@ -668,26 +565,24 @@ int CRhinoCom::VariantToArray(const VARIANT& va, ON_SimpleArray<bool>& arr, bool
   if (psa == 0)
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
     return 0;
   }
 
   if (SafeArrayGetDim(psa) != 1)
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_one_dim_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_one_dim_required);
     return 0;
   }
 
   if (psa->fFeatures & FADF_VARIANT)
     return VariantArrayToBooleanArray(psa, arr, bQuiet);
-  else
-    return SafeArrayToBooleanArray(psa, arr);
 
-  return 0;
+  return SafeArrayToBooleanArray(psa, arr);
 }
 
-int CRhinoCom::VariantToArray(const VARIANT& va, ON_SimpleArray<int>& arr, bool bQuiet)
+int CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_SimpleArray<int>& arr, bool bQuiet)
 {
   if (va.vt == VT_ERROR && va.scode == DISP_E_PARAMNOTFOUND)
     return 0;
@@ -708,26 +603,24 @@ int CRhinoCom::VariantToArray(const VARIANT& va, ON_SimpleArray<int>& arr, bool 
   if (psa == 0)
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
     return 0;
   }
 
   if (SafeArrayGetDim(psa) != 1)
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_one_dim_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_one_dim_required);
     return 0;
   }
 
   if (psa->fFeatures & FADF_VARIANT)
     return VariantArrayToIntegerArray(psa, arr, bQuiet);
-  else
-    return SafeArrayToIntegerArray(psa, arr);
 
-  return 0;
+  return SafeArrayToIntegerArray(psa, arr);
 }
 
-int CRhinoCom::VariantToArray(const VARIANT& va, ON_SimpleArray<float>& arr, bool bQuiet)
+int CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_SimpleArray<float>& arr, bool bQuiet)
 {
   if (va.vt == VT_ERROR && va.scode == DISP_E_PARAMNOTFOUND)
     return 0;
@@ -748,26 +641,24 @@ int CRhinoCom::VariantToArray(const VARIANT& va, ON_SimpleArray<float>& arr, boo
   if (psa == 0)
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
     return 0;
   }
 
   if (SafeArrayGetDim(psa) != 1)
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_one_dim_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_one_dim_required);
     return 0;
   }
 
   if (psa->fFeatures & FADF_VARIANT)
     return VariantArrayToFloatArray(psa, arr, bQuiet);
-  else
-    return SafeArrayToFloatArray(psa, arr);
 
-  return 0;
+  return SafeArrayToFloatArray(psa, arr);
 }
 
-int CRhinoCom::VariantToArray(const VARIANT& va, ON_SimpleArray<double>& arr, bool bQuiet)
+int CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_SimpleArray<double>& arr, bool bQuiet)
 {
   if (va.vt == VT_ERROR && va.scode == DISP_E_PARAMNOTFOUND)
     return 0;
@@ -788,26 +679,24 @@ int CRhinoCom::VariantToArray(const VARIANT& va, ON_SimpleArray<double>& arr, bo
   if (psa == 0)
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
     return 0;
   }
 
   if (SafeArrayGetDim(psa) != 1)
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_one_dim_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_one_dim_required);
     return 0;
   }
 
   if (psa->fFeatures & FADF_VARIANT)
     return VariantArrayToDoubleArray(psa, arr, bQuiet);
-  else
-    return SafeArrayToDoubleArray(psa, arr);
 
-  return 0;
+  return SafeArrayToDoubleArray(psa, arr);
 }
 
-int CRhinoCom::VariantToArray(const VARIANT& va, ON_ClassArray<ON_wString>& arr, bool bQuiet)
+int CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_ClassArray<ON_wString>& arr, bool bQuiet)
 {
   if (va.vt == VT_ERROR && va.scode == DISP_E_PARAMNOTFOUND)
     return 0;
@@ -828,69 +717,24 @@ int CRhinoCom::VariantToArray(const VARIANT& va, ON_ClassArray<ON_wString>& arr,
   if (psa == 0)
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
     return 0;
   }
 
   if (SafeArrayGetDim(psa) != 1)
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_one_dim_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_one_dim_required);
     return 0;
   }
 
   if (psa->fFeatures & FADF_VARIANT)
     return VariantArrayToStringArray(psa, arr, bQuiet);
-  else
-    return SafeArrayToStringArray(psa, arr);
 
-  return 0;
+  return SafeArrayToStringArray(psa, arr);
 }
 
-int CRhinoCom::VariantToArray(const VARIANT& va, CStringArray& arr, bool bQuiet)
-{
-  if (va.vt == VT_ERROR && va.scode == DISP_E_PARAMNOTFOUND)
-    return 0;
-
-  const VARIANT* pva = &va;
-  while (pva->vt == (VT_BYREF | VT_VARIANT))
-    pva = pva->pvarVal;
-
-  SAFEARRAY* psa = 0;
-  if (pva->vt & VT_ARRAY)
-  {
-    if (pva->vt & VT_BYREF)
-      psa = *pva->pparray;
-    else
-      psa = pva->parray;
-  }
-
-  if (psa == 0)
-  {
-    if (false == bQuiet)
-      ThrowOleDispatchException(err_array_required);
-    return 0;
-  }
-
-  if (SafeArrayGetDim(psa) != 1)
-  {
-    if (false == bQuiet)
-      ThrowOleDispatchException(err_array_one_dim_required);
-    return 0;
-  }
-
-  if (psa->fFeatures & FADF_VARIANT)
-    return VariantArrayToStringArray(psa, arr, bQuiet);
-  else
-    return SafeArrayToStringArray(psa, arr);
-
-  return 0;
-}
-
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-
-bool CRhinoCom::VariantToPoint(const VARIANT& va, ON_2dPoint& pt, bool bQuiet)
+bool CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_2dPoint& pt, bool bQuiet)
 {
   if (va.vt == VT_ERROR && va.scode == DISP_E_PARAMNOTFOUND)
     return false;
@@ -911,14 +755,14 @@ bool CRhinoCom::VariantToPoint(const VARIANT& va, ON_2dPoint& pt, bool bQuiet)
   if (psa == 0)
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
     return false;
   }
 
   if (SafeArrayGetDim(psa) != 1)
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_one_dim_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_one_dim_required);
     return false;
   }
 
@@ -931,7 +775,7 @@ bool CRhinoCom::VariantToPoint(const VARIANT& va, ON_2dPoint& pt, bool bQuiet)
   if (false == rc)
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_one_dim_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_one_dim_required);
   }
   else
     rc = pt.IsValid();
@@ -939,7 +783,7 @@ bool CRhinoCom::VariantToPoint(const VARIANT& va, ON_2dPoint& pt, bool bQuiet)
   return rc;
 }
 
-bool CRhinoCom::VariantToPoint(const VARIANT& va, ON_3dPoint& pt, bool bQuiet)
+bool CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_3dPoint& pt, bool bQuiet)
 {
   if (va.vt == VT_ERROR && va.scode == DISP_E_PARAMNOTFOUND)
     return false;
@@ -960,14 +804,14 @@ bool CRhinoCom::VariantToPoint(const VARIANT& va, ON_3dPoint& pt, bool bQuiet)
   if (psa == 0)
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
     return false;
   }
 
   if (SafeArrayGetDim(psa) != 1)
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_one_dim_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_one_dim_required);
     return false;
   }
 
@@ -980,7 +824,7 @@ bool CRhinoCom::VariantToPoint(const VARIANT& va, ON_3dPoint& pt, bool bQuiet)
   if (false == rc)
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_one_dim_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_one_dim_required);
   }
   else
     rc = pt.IsValid();
@@ -988,7 +832,7 @@ bool CRhinoCom::VariantToPoint(const VARIANT& va, ON_3dPoint& pt, bool bQuiet)
   return rc;
 }
 
-bool CRhinoCom::VariantToPoint(const VARIANT& va, ON_3fPoint& pt, bool bQuiet)
+bool CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_3fPoint& pt, bool bQuiet)
 {
   if (va.vt == VT_ERROR && va.scode == DISP_E_PARAMNOTFOUND)
     return false;
@@ -1009,14 +853,14 @@ bool CRhinoCom::VariantToPoint(const VARIANT& va, ON_3fPoint& pt, bool bQuiet)
   if (psa == 0)
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
     return false;
   }
 
   if (SafeArrayGetDim(psa) != 1)
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_one_dim_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_one_dim_required);
     return false;
   }
 
@@ -1029,13 +873,13 @@ bool CRhinoCom::VariantToPoint(const VARIANT& va, ON_3fPoint& pt, bool bQuiet)
   if (false == rc)
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_one_dim_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_one_dim_required);
   }
 
   return rc;
 }
 
-bool CRhinoCom::VariantToPoint(const VARIANT& va, ON_4fPoint& pt, bool bQuiet)
+bool CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_4fPoint& pt, bool bQuiet)
 {
   if (va.vt == VT_ERROR && va.scode == DISP_E_PARAMNOTFOUND)
     return false;
@@ -1056,14 +900,14 @@ bool CRhinoCom::VariantToPoint(const VARIANT& va, ON_4fPoint& pt, bool bQuiet)
   if (psa == 0)
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
     return false;
   }
 
   if (SafeArrayGetDim(psa) != 1)
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_one_dim_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_one_dim_required);
     return false;
   }
 
@@ -1076,13 +920,13 @@ bool CRhinoCom::VariantToPoint(const VARIANT& va, ON_4fPoint& pt, bool bQuiet)
   if (false == rc)
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_one_dim_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_one_dim_required);
   }
 
   return rc;
 }
 
-bool CRhinoCom::VariantToPoint(const VARIANT& va, ON_4dPoint& pt, bool bQuiet)
+bool CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_4dPoint& pt, bool bQuiet)
 {
   if (va.vt == VT_ERROR && va.scode == DISP_E_PARAMNOTFOUND)
     return false;
@@ -1103,14 +947,14 @@ bool CRhinoCom::VariantToPoint(const VARIANT& va, ON_4dPoint& pt, bool bQuiet)
   if (psa == 0)
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
     return false;
   }
 
   if (SafeArrayGetDim(psa) != 1)
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_one_dim_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_one_dim_required);
     return false;
   }
 
@@ -1123,7 +967,7 @@ bool CRhinoCom::VariantToPoint(const VARIANT& va, ON_4dPoint& pt, bool bQuiet)
   if (false == rc)
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_one_dim_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_one_dim_required);
   }
   else
     rc = pt.IsValid();
@@ -1131,10 +975,10 @@ bool CRhinoCom::VariantToPoint(const VARIANT& va, ON_4dPoint& pt, bool bQuiet)
   return rc;
 }
 
-bool CRhinoCom::VariantToVector(const VARIANT& va, ON_3dVector& v, bool bQuiet)
+bool CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_3dVector& v, bool bQuiet)
 {
   ON_3dPoint pt;
-  bool rc = VariantToPoint(va, pt, bQuiet);
+  bool rc = ConvertVariant(va, pt, bQuiet);
   if (rc)
     v = pt;
 
@@ -1144,7 +988,7 @@ bool CRhinoCom::VariantToVector(const VARIANT& va, ON_3dVector& v, bool bQuiet)
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
 
-int CRhinoCom::VariantToPointArray(const VARIANT& va, ON_2dPointArray& arr, bool bQuiet)
+int CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_2dPointArray& arr, bool bQuiet)
 {
   if (va.vt == VT_ERROR && va.scode == DISP_E_PARAMNOTFOUND)
     return 0;
@@ -1165,26 +1009,24 @@ int CRhinoCom::VariantToPointArray(const VARIANT& va, ON_2dPointArray& arr, bool
   if (psa == 0)
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
     return 0;
   }
 
   if (SafeArrayGetDim(psa) != 1)
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_one_dim_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_one_dim_required);
     return 0;
   }
 
   if (psa->fFeatures & FADF_VARIANT)
     return VariantArrayToPointArray(psa, arr, bQuiet);
-  else
-    return SafeArrayToPointArray(psa, arr);
 
-  return 0;
+  return SafeArrayToPointArray(psa, arr);
 }
 
-int CRhinoCom::VariantToPointArray(const VARIANT& va, ON_3dPointArray& arr, bool bQuiet)
+int CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_3dPointArray& arr, bool bQuiet)
 {
   if (va.vt == VT_ERROR && va.scode == DISP_E_PARAMNOTFOUND)
     return 0;
@@ -1205,26 +1047,24 @@ int CRhinoCom::VariantToPointArray(const VARIANT& va, ON_3dPointArray& arr, bool
   if (psa == 0)
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
     return 0;
   }
 
   if (SafeArrayGetDim(psa) != 1)
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_one_dim_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_one_dim_required);
     return 0;
   }
 
   if (psa->fFeatures & FADF_VARIANT)
     return VariantArrayToPointArray(psa, arr, bQuiet);
-  else
-    return SafeArrayToPointArray(psa, arr);
 
-  return 0;
+  return SafeArrayToPointArray(psa, arr);
 }
 
-int CRhinoCom::VariantToPointArray(const VARIANT& va, ON_3fPointArray& arr, bool bQuiet)
+int CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_3fPointArray& arr, bool bQuiet)
 {
   if (va.vt == VT_ERROR && va.scode == DISP_E_PARAMNOTFOUND)
     return 0;
@@ -1245,26 +1085,24 @@ int CRhinoCom::VariantToPointArray(const VARIANT& va, ON_3fPointArray& arr, bool
   if (psa == 0)
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
     return 0;
   }
 
   if (SafeArrayGetDim(psa) != 1)
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_one_dim_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_one_dim_required);
     return 0;
   }
 
   if (psa->fFeatures & FADF_VARIANT)
     return VariantArrayToPointArray(psa, arr, bQuiet);
-  else
-    return SafeArrayToPointArray(psa, arr);
 
-  return 0;
+  return SafeArrayToPointArray(psa, arr);
 }
 
-int CRhinoCom::VariantToPointArray(const VARIANT& va, ON_4dPointArray& arr, bool bQuiet)
+int CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_4dPointArray& arr, bool bQuiet)
 {
   if (va.vt == VT_ERROR && va.scode == DISP_E_PARAMNOTFOUND)
     return 0;
@@ -1285,26 +1123,24 @@ int CRhinoCom::VariantToPointArray(const VARIANT& va, ON_4dPointArray& arr, bool
   if (psa == 0)
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
     return 0;
   }
 
   if (SafeArrayGetDim(psa) != 1)
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_one_dim_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_one_dim_required);
     return 0;
   }
 
   if (psa->fFeatures & FADF_VARIANT)
     return VariantArrayToPointArray(psa, arr, bQuiet);
-  else
-    return SafeArrayToPointArray(psa, arr);
 
-  return 0;
+  return SafeArrayToPointArray(psa, arr);
 }
 
-int CRhinoCom::VariantToPointArray(const VARIANT& va, ON_4fPointArray& arr, bool bQuiet)
+int CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_4fPointArray& arr, bool bQuiet)
 {
   if (va.vt == VT_ERROR && va.scode == DISP_E_PARAMNOTFOUND)
     return 0;
@@ -1325,29 +1161,65 @@ int CRhinoCom::VariantToPointArray(const VARIANT& va, ON_4fPointArray& arr, bool
   if (psa == 0)
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
     return 0;
   }
 
   if (SafeArrayGetDim(psa) != 1)
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_one_dim_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_one_dim_required);
     return 0;
   }
 
   if (psa->fFeatures & FADF_VARIANT)
     return VariantArrayToPointArray(psa, arr, bQuiet);
-  else
-    return SafeArrayToPointArray(psa, arr);
 
-  return 0;
+  return SafeArrayToPointArray(psa, arr);
+}
+
+int CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_SimpleArray<ON_Color>& arr, bool bQuiet)
+{
+  if (va.vt == VT_ERROR && va.scode == DISP_E_PARAMNOTFOUND)
+    return 0;
+
+  const VARIANT* pva = &va;
+  while (pva->vt == (VT_BYREF | VT_VARIANT))
+    pva = pva->pvarVal;
+
+  SAFEARRAY* psa = 0;
+  if (pva->vt & VT_ARRAY)
+  {
+    if (pva->vt & VT_BYREF)
+      psa = *pva->pparray;
+    else
+      psa = pva->parray;
+  }
+
+  if (psa == 0)
+  {
+    if (false == bQuiet)
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
+    return 0;
+  }
+
+  if (SafeArrayGetDim(psa) != 1)
+  {
+    if (false == bQuiet)
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_one_dim_required);
+    return 0;
+  }
+
+  if (psa->fFeatures & FADF_VARIANT)
+    return VariantArrayToColorArray(psa, arr, bQuiet);
+
+  return SafeArrayToColorArray(psa, arr);
 }
 
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
 
-bool CRhinoCom::VariantToColor(const VARIANT& va, ON_Color& color, bool bQuiet)
+bool CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_Color& color, bool bQuiet)
 {
   if (va.vt == VT_ERROR && va.scode == DISP_E_PARAMNOTFOUND)
     return false;
@@ -1355,48 +1227,36 @@ bool CRhinoCom::VariantToColor(const VARIANT& va, ON_Color& color, bool bQuiet)
   const VARIANT* pva = &va;
   while (pva->vt == (VT_BYREF | VT_VARIANT))
     pva = pva->pvarVal;
-
-  int cf = 0;
 
   switch (pva->vt)
   {
   case VT_BOOL:
-    cf = (pva->boolVal) ? 0 : 16777215; // black (off) or white (on)
+    color = (pva->boolVal ? 0 : RGB(255, 255, 255));
     break;
   case VT_I2:
-    cf = (int)pva->iVal;
+    color = RHINO_CLAMP((unsigned int)pva->iVal, RGB(0, 0, 0), RGB(255, 255, 255));
     break;
   case VT_I4:
-    cf = (int)pva->lVal;
+    color = RHINO_CLAMP((unsigned int)pva->lVal, RGB(0, 0, 0), RGB(255, 255, 255));
     break;
   case VT_R4:
-    cf = (int)pva->fltVal;
+    color = RHINO_CLAMP((unsigned int)pva->fltVal, RGB(0, 0, 0), RGB(255, 255, 255));
     break;
   case VT_R8:
-    cf = (int)pva->dblVal;
+    color = RHINO_CLAMP((unsigned int)pva->dblVal, RGB(0, 0, 0), RGB(255, 255, 255));
     break;
   default:
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_integer_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_integer_required);
   }
   return false;
   }
 
-  if (cf < 0 || cf > RGB(255, 255, 255))
-  {
-    if (false == bQuiet)
-      ThrowOleDispatchException(err_integer_required);
-    return false;
-  }
-
-  color = ON_Color(cf);
-
   return true;
 }
 
-
-bool CRhinoCom::VariantToXform(const VARIANT& va, ON_Xform& xform, bool bQuiet)
+bool CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_Xform& xform, bool bQuiet)
 {
   if (va.vt == VT_ERROR && va.scode == DISP_E_PARAMNOTFOUND)
     return false;
@@ -1414,14 +1274,14 @@ bool CRhinoCom::VariantToXform(const VARIANT& va, ON_Xform& xform, bool bQuiet)
   if (psa == 0)
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
     return false;
   }
 
   if (SafeArrayGetDim(psa) != 2)
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_one_dim_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_one_dim_required);
     return false;
   }
 
@@ -1438,7 +1298,7 @@ bool CRhinoCom::VariantToXform(const VARIANT& va, ON_Xform& xform, bool bQuiet)
   if (col_size != 3 && row_size != 3)
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_two_dim_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_two_dim_required);
     return false;
   }
 
@@ -1459,7 +1319,7 @@ bool CRhinoCom::VariantToXform(const VARIANT& va, ON_Xform& xform, bool bQuiet)
       SafeArrayGetElement(psa, index, &element);
 
       double d = 0.0;
-      if (VariantToDouble(element, d, bQuiet))
+      if (ConvertVariant(element, d, bQuiet))
         matrix[row_count][col_count] = d;
 
       VariantClear(&element);
@@ -1472,11 +1332,11 @@ bool CRhinoCom::VariantToXform(const VARIANT& va, ON_Xform& xform, bool bQuiet)
   return xform.IsValid() ? true : false;
 }
 
-bool CRhinoCom::VariantToPlane(const VARIANT& va, ON_Plane& plane, bool bQuiet)
+bool CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_Plane& plane, bool bQuiet)
 {
   bool rc = false;
   ON_3dPointArray arr;
-  if (VariantToPointArray(va, arr, bQuiet) && arr.Count() > 2)
+  if (ConvertVariant(va, arr, bQuiet) && arr.Count() > 2)
   {
     plane.CreateFromFrame(arr[0], arr[1], arr[2]);
     rc = (plane.IsValid() ? true : false);
@@ -1484,11 +1344,11 @@ bool CRhinoCom::VariantToPlane(const VARIANT& va, ON_Plane& plane, bool bQuiet)
   return rc;
 }
 
-bool CRhinoCom::VariantToLine(const VARIANT& va, ON_Line& line, bool bQuiet)
+bool CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_Line& line, bool bQuiet)
 {
   bool rc = false;
   ON_3dPointArray arr;
-  if (VariantToPointArray(va, arr, bQuiet) && arr.Count() == 2)
+  if (ConvertVariant(va, arr, bQuiet) && arr.Count() == 2)
   {
     line.Create(arr[0], arr[1]);
     rc = (line.IsValid() ? true : false);
@@ -1496,112 +1356,86 @@ bool CRhinoCom::VariantToLine(const VARIANT& va, ON_Line& line, bool bQuiet)
   return rc;
 }
 
-bool CRhinoCom::VariantToObject(const VARIANT& va, const CRhinoObject*& object, bool bQuiet)
+bool CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, CRhinoObjRef& object_ref, bool bQuiet)
 {
   bool rc = false;
   ON_wString str;
-  if (VariantToString(va, str, bQuiet))
+  if (ConvertVariant(va, str, bQuiet))
   {
-    object = RhinoObject(str);
-    if (object)
+    if (RhinoObjRef(str, object_ref))
       rc = true;
   }
   return rc;
 }
 
-bool CRhinoCom::VariantToObject(const VARIANT& va, CRhinoObject*& object, bool bQuiet)
+bool CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_Interval& interval, bool bQuiet)
 {
+  UNREFERENCED_PARAMETER(bQuiet);
+
   bool rc = false;
-  ON_wString str;
-  if (VariantToString(va, str, bQuiet))
+  ON_SimpleArray<double> arr;
+  if (ConvertVariant(va, arr) && arr.Count() == 2)
   {
-    object = RhinoObject(str);
-    if (object)
-      rc = true;
+    interval.Set(arr[0], arr[1]);
+    rc = true;
   }
   return rc;
 }
 
-int CRhinoCom::VariantToObjects(const VARIANT& va, ON_SimpleArray<CRhinoObject*>& objects, bool bQuiet)
+int CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_ClassArray<CRhinoObjRef>& object_refs, bool bQuiet)
 {
   if (IsVariantString(va))
   {
-    CRhinoObject* obj = 0;
-    if (VariantToObject(va, obj, bQuiet))
-      objects.Append(obj);
+    CRhinoObjRef ref;
+    if (ConvertVariant(va, ref, bQuiet))
+      object_refs.Append(ref);
   }
   else
   {
     ON_ClassArray<ON_wString> strings;
-    if (VariantToArray(va, strings, bQuiet))
+    if (ConvertVariant(va, strings, bQuiet))
     {
       const int string_count = strings.Count();
       int i;
       for (i = 0; i < string_count; i++)
       {
-        CRhinoObject* obj = RhinoObject(strings[i]);
-        if (obj)
-          objects.Append(obj);
+        CRhinoObjRef ref;
+        if (RhinoObjRef(strings[i], ref))
+          object_refs.Append(ref);
       }
     }
   }
-  return objects.Count();
+  return object_refs.Count();
 }
 
-int CRhinoCom::VariantToObjects(const VARIANT& va, ON_SimpleArray<const CRhinoObject*>& objects, bool bQuiet)
-{
-  if (IsVariantString(va))
-  {
-    const CRhinoObject* obj = 0;
-    if (VariantToObject(va, obj, bQuiet))
-      objects.Append(obj);
-  }
-  else
-  {
-    ON_ClassArray<ON_wString> strings;
-    if (VariantToArray(va, strings, bQuiet))
-    {
-      const int string_count = strings.Count();
-      int i;
-      for (i = 0; i < string_count; i++)
-      {
-        const CRhinoObject* obj = RhinoObject(strings[i]);
-        if (obj)
-          objects.Append(obj);
-      }
-    }
-  }
-  return objects.Count();
-}
-
-bool CRhinoCom::VariantToUuid(const VARIANT& va, ON_UUID& uuid, bool bQuiet)
+bool CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_UUID& uuid, bool bQuiet)
 {
   bool rc = false;
   ON_wString str;
-  if (VariantToString(va, str, bQuiet))
-    rc = StringToUUID(str, uuid);
+  if (ConvertVariant(va, str, bQuiet))
+    rc = StringToUuid(str, uuid);
   return rc;
 }
 
-int CRhinoCom::VariantToUuids(const VARIANT& va, ON_SimpleArray<ON_UUID>& uuids, bool bQuiet)
+int CRhinoVariantHelpers::ConvertVariant(const VARIANT& va, ON_SimpleArray<ON_UUID>& uuids, bool bQuiet)
 {
   if (IsVariantString(va))
   {
     ON_UUID uuid = ON_nil_uuid;
-    if (VariantToUuid(va, uuid, bQuiet))
+    if (ConvertVariant(va, uuid, bQuiet))
       uuids.Append(uuid);
   }
   else
   {
     ON_ClassArray<ON_wString> strings;
-    if (VariantToArray(va, strings, bQuiet))
+    if (ConvertVariant(va, strings, bQuiet))
     {
       const int string_count = strings.Count();
       int i;
       for (i = 0; i < string_count; i++)
       {
         ON_UUID uuid = ON_nil_uuid;
-        if (StringToUUID(strings[i], uuid))
+        if (StringToUuid(strings[i], uuid))
           uuids.Append(uuid);
       }
     }
@@ -1609,44 +1443,45 @@ int CRhinoCom::VariantToUuids(const VARIANT& va, ON_SimpleArray<ON_UUID>& uuids,
   return uuids.Count();
 }
 
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-
-void CRhinoCom::PointToSafeArray(const ON_2dPoint& pt, COleSafeArray& sa)
+bool CRhinoVariantHelpers::CreateSafeArray(const ON_2dPoint& pt, COleSafeArray& sa)
 {
   COleVariant var[2];
   var[0] = pt.x;
   var[1] = pt.y;
   sa.CreateOneDim(VT_VARIANT, 2, var);
+  return true;
 }
 
-void CRhinoCom::PointToSafeArray(const ON_2fPoint& pt, COleSafeArray& sa)
+bool CRhinoVariantHelpers::CreateSafeArray(const ON_2fPoint& pt, COleSafeArray& sa)
 {
   COleVariant var[2];
   var[0] = pt.x;
   var[1] = pt.y;
   sa.CreateOneDim(VT_VARIANT, 2, var);
+  return true;
 }
 
-void CRhinoCom::PointToSafeArray(const ON_3dPoint& pt, COleSafeArray& sa)
+bool CRhinoVariantHelpers::CreateSafeArray(const ON_3dPoint& pt, COleSafeArray& sa)
 {
   COleVariant var[3];
   var[0] = pt.x;
   var[1] = pt.y;
   var[2] = pt.z;
   sa.CreateOneDim(VT_VARIANT, 3, var);
+  return true;
 }
 
-void CRhinoCom::PointToSafeArray(const ON_3fPoint& pt, COleSafeArray& sa)
+bool CRhinoVariantHelpers::CreateSafeArray(const ON_3fPoint& pt, COleSafeArray& sa)
 {
   COleVariant var[3];
   var[0] = pt.x;
   var[1] = pt.y;
   var[2] = pt.z;
   sa.CreateOneDim(VT_VARIANT, 3, var);
+  return true;
 }
 
-void CRhinoCom::PointToSafeArray(const ON_4dPoint& pt, COleSafeArray& sa)
+bool CRhinoVariantHelpers::CreateSafeArray(const ON_4dPoint& pt, COleSafeArray& sa)
 {
   COleVariant var[4];
   var[0] = pt.x;
@@ -1654,9 +1489,10 @@ void CRhinoCom::PointToSafeArray(const ON_4dPoint& pt, COleSafeArray& sa)
   var[2] = pt.z;
   var[3] = pt.w;
   sa.CreateOneDim(VT_VARIANT, 4, var);
+  return true;
 }
 
-void CRhinoCom::PointToSafeArray(const ON_4fPoint& pt, COleSafeArray& sa)
+bool CRhinoVariantHelpers::CreateSafeArray(const ON_4fPoint& pt, COleSafeArray& sa)
 {
   COleVariant var[4];
   var[0] = pt.x;
@@ -1664,30 +1500,30 @@ void CRhinoCom::PointToSafeArray(const ON_4fPoint& pt, COleSafeArray& sa)
   var[2] = pt.z;
   var[3] = pt.w;
   sa.CreateOneDim(VT_VARIANT, 4, var);
+  return true;
 }
 
-void CRhinoCom::VectorToSafeArray(const ON_3dVector& v, COleSafeArray& sa)
+bool CRhinoVariantHelpers::CreateSafeArray(const ON_3dVector& v, COleSafeArray& sa)
 {
   COleVariant var[3];
   var[0] = v.x;
   var[1] = v.y;
   var[2] = v.z;
   sa.CreateOneDim(VT_VARIANT, 3, var);
+  return true;
 }
 
-void CRhinoCom::VectorToSafeArray(const ON_3fVector& v, COleSafeArray& sa)
+bool CRhinoVariantHelpers::CreateSafeArray(const ON_3fVector& v, COleSafeArray& sa)
 {
   COleVariant var[3];
   var[0] = v.x;
   var[1] = v.y;
   var[2] = v.z;
   sa.CreateOneDim(VT_VARIANT, 3, var);
+  return true;
 }
 
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-
-bool CRhinoCom::BooleanArrayToSafeArray(const ON_SimpleArray<bool>& arr, COleSafeArray& sa)
+bool CRhinoVariantHelpers::CreateSafeArray(const ON_SimpleArray<bool>& arr, COleSafeArray& sa)
 {
   bool rc = false;
   int i, count = arr.Count();
@@ -1712,32 +1548,7 @@ bool CRhinoCom::BooleanArrayToSafeArray(const ON_SimpleArray<bool>& arr, COleSaf
   return rc;
 }
 
-bool CRhinoCom::BooleanArrayToSafeArray(const ON_SimpleArray<BOOL>& arr, COleSafeArray& sa)
-{
-  bool rc = false;
-  int i, count = arr.Count();
-  if (count > 0)
-  {
-    DWORD numElements[1];
-    numElements[0] = (DWORD)count;
-    sa.Create(VT_VARIANT, 1, numElements);
-    long index[1];
-    for (i = 0; i < count; i++)
-    {
-      index[0] = (long)i;
-      VARIANT v;
-      VariantInit(&v);
-      v.vt = VT_BOOL;
-      v.boolVal = (arr[i] ? VARIANT_TRUE : VARIANT_FALSE);
-      sa.PutElement(index, &v);
-      VariantClear(&v);
-    }
-    rc = true;
-  }
-  return rc;
-}
-
-bool CRhinoCom::IntegerArrayToSafeArray(const ON_SimpleArray<int>& arr, COleSafeArray& sa)
+bool CRhinoVariantHelpers::CreateSafeArray(const ON_SimpleArray<int>& arr, COleSafeArray& sa)
 {
   bool rc = false;
   int i, count = arr.Count();
@@ -1762,7 +1573,7 @@ bool CRhinoCom::IntegerArrayToSafeArray(const ON_SimpleArray<int>& arr, COleSafe
   return rc;
 }
 
-bool CRhinoCom::DoubleArrayToSafeArray(const ON_SimpleArray<double>& arr, COleSafeArray& sa)
+bool CRhinoVariantHelpers::CreateSafeArray(const ON_SimpleArray<double>& arr, COleSafeArray& sa)
 {
   bool rc = false;
   int i, count = arr.Count();
@@ -1787,7 +1598,7 @@ bool CRhinoCom::DoubleArrayToSafeArray(const ON_SimpleArray<double>& arr, COleSa
   return rc;
 }
 
-bool CRhinoCom::StringArrayToSafeArray(const ON_ClassArray<ON_wString>& arr, COleSafeArray& sa, bool bAllowEmptyStrings)
+bool CRhinoVariantHelpers::CreateSafeArray(const ON_ClassArray<ON_wString>& arr, COleSafeArray& sa, bool bAllowEmptyStrings)
 {
   bool rc = false;
   int i, count = arr.Count();
@@ -1823,7 +1634,7 @@ bool CRhinoCom::StringArrayToSafeArray(const ON_ClassArray<ON_wString>& arr, COl
   return rc;
 }
 
-bool CRhinoCom::StringArrayToSafeArray(const CStringArray& arr, COleSafeArray& sa, bool bAllowEmptyStrings)
+bool CRhinoVariantHelpers::CreateSafeArray(const CStringArray& arr, COleSafeArray& sa, bool bAllowEmptyStrings)
 {
   bool rc = false;
   int i, count = (int)arr.GetCount(); // (int) cast for x64 builds
@@ -1858,7 +1669,7 @@ bool CRhinoCom::StringArrayToSafeArray(const CStringArray& arr, COleSafeArray& s
   return rc;
 }
 
-bool CRhinoCom::UuidArrayToSafeArray(const ON_SimpleArray<ON_UUID>& arr, COleSafeArray& sa)
+bool CRhinoVariantHelpers::CreateSafeArray(const ON_SimpleArray<ON_UUID>& arr, COleSafeArray& sa)
 {
   bool rc = false;
   int count = arr.Count();
@@ -1867,15 +1678,32 @@ bool CRhinoCom::UuidArrayToSafeArray(const ON_SimpleArray<ON_UUID>& arr, COleSaf
     CStringArray strings;
     count = UuidArrayToStringArray(arr, strings);
     if (count > 0)
-      rc = StringArrayToSafeArray(strings, sa);
+      rc = CreateSafeArray(strings, sa);
   }
   return rc;
 }
 
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
+bool CRhinoVariantHelpers::CreateSafeArray(const ON_ClassArray<CRhinoObjRef>& arr, COleSafeArray& sa)
+{
+  bool rc = false;
+  int arr_count = arr.Count();
+  if (arr_count > 0)
+  {
+    ON_ClassArray<ON_wString> strings(arr_count);
+    for (int i = 0; i < arr_count; i++)
+    {
+      ON_wString str;
+      if (ON_UuidToString(arr[i].ObjectUuid(), str))
+        strings.Append(str);
+    }
 
-bool CRhinoCom::PointArrayToSafeArray(const ON_2dPointArray& arr, COleSafeArray& sa)
+    if (strings.Count() > 0)
+      rc = CreateSafeArray(strings, sa);
+  }
+  return rc;
+}
+
+bool CRhinoVariantHelpers::CreateSafeArray(const ON_2dPointArray& arr, COleSafeArray& sa)
 {
   bool rc = false;
   int i, count = arr.Count();
@@ -1889,17 +1717,17 @@ bool CRhinoCom::PointArrayToSafeArray(const ON_2dPointArray& arr, COleSafeArray&
     {
       index[0] = (long)i;
       COleSafeArray osa;
-      PointToSafeArray(arr[i], osa);
-      COleVariant va;
-      va.Attach(osa.Detach());
-      sa.PutElement(index, va);
+      CreateSafeArray(arr[i], osa);
+      VARIANT va = osa.Detach();
+      sa.PutElement(index, (VARIANT*)&va);
+      VariantClear(&va);
     }
     rc = true;
   }
   return rc;
 }
 
-bool CRhinoCom::PointArrayToSafeArray(const ON_2fPointArray& arr, COleSafeArray& sa)
+bool CRhinoVariantHelpers::CreateSafeArray(const ON_2fPointArray& arr, COleSafeArray& sa)
 {
   bool rc = false;
   int i, count = arr.Count();
@@ -1913,17 +1741,17 @@ bool CRhinoCom::PointArrayToSafeArray(const ON_2fPointArray& arr, COleSafeArray&
     {
       index[0] = (long)i;
       COleSafeArray osa;
-      PointToSafeArray(arr[i], osa);
-      COleVariant va;
-      va.Attach(osa.Detach());
-      sa.PutElement(index, va);
+      CreateSafeArray(arr[i], osa);
+      VARIANT va = osa.Detach();
+      sa.PutElement(index, (VARIANT*)&va);
+      VariantClear(&va);
     }
     rc = true;
   }
   return rc;
 }
 
-bool CRhinoCom::PointArrayToSafeArray(const ON_3dPointArray& arr, COleSafeArray& sa)
+bool CRhinoVariantHelpers::CreateSafeArray(const ON_3fPointArray& arr, COleSafeArray& sa)
 {
   bool rc = false;
   int i, count = arr.Count();
@@ -1937,17 +1765,17 @@ bool CRhinoCom::PointArrayToSafeArray(const ON_3dPointArray& arr, COleSafeArray&
     {
       index[0] = (long)i;
       COleSafeArray osa;
-      PointToSafeArray(arr[i], osa);
-      COleVariant va;
-      va.Attach(osa.Detach());
-      sa.PutElement(index, va);
+      CreateSafeArray(arr[i], osa);
+      VARIANT va = osa.Detach();
+      sa.PutElement(index, (VARIANT*)&va);
+      VariantClear(&va);
     }
     rc = true;
   }
   return rc;
 }
 
-bool CRhinoCom::PointArrayToSafeArray(const ON_4fPointArray& arr, COleSafeArray& sa)
+bool CRhinoVariantHelpers::CreateSafeArray(const ON_3dPointArray& arr, COleSafeArray& sa)
 {
   bool rc = false;
   int i, count = arr.Count();
@@ -1961,17 +1789,17 @@ bool CRhinoCom::PointArrayToSafeArray(const ON_4fPointArray& arr, COleSafeArray&
     {
       index[0] = (long)i;
       COleSafeArray osa;
-      PointToSafeArray(arr[i], osa);
-      COleVariant va;
-      va.Attach(osa.Detach());
-      sa.PutElement(index, va);
+      CreateSafeArray(arr[i], osa);
+      VARIANT va = osa.Detach();
+      sa.PutElement(index, (VARIANT*)&va);
+      VariantClear(&va);
     }
     rc = true;
   }
   return rc;
 }
 
-bool CRhinoCom::VectorArrayToSafeArray(const ON_3dVectorArray& arr, COleSafeArray& sa)
+bool CRhinoVariantHelpers::CreateSafeArray(const ON_4fPointArray& arr, COleSafeArray& sa)
 {
   bool rc = false;
   int i, count = arr.Count();
@@ -1985,17 +1813,17 @@ bool CRhinoCom::VectorArrayToSafeArray(const ON_3dVectorArray& arr, COleSafeArra
     {
       index[0] = (long)i;
       COleSafeArray osa;
-      VectorToSafeArray(arr[i], osa);
-      COleVariant va;
-      va.Attach(osa.Detach());
-      sa.PutElement(index, va);
+      CreateSafeArray(arr[i], osa);
+      VARIANT va = osa.Detach();
+      sa.PutElement(index, (VARIANT*)&va);
+      VariantClear(&va);
     }
     rc = true;
   }
   return rc;
 }
 
-bool CRhinoCom::VectorArrayToSafeArray(const ON_3fVectorArray& arr, COleSafeArray& sa)
+bool CRhinoVariantHelpers::CreateSafeArray(const ON_3dVectorArray& arr, COleSafeArray& sa)
 {
   bool rc = false;
   int i, count = arr.Count();
@@ -2009,20 +1837,41 @@ bool CRhinoCom::VectorArrayToSafeArray(const ON_3fVectorArray& arr, COleSafeArra
     {
       index[0] = (long)i;
       COleSafeArray osa;
-      VectorToSafeArray(arr[i], osa);
-      COleVariant va;
-      va.Attach(osa.Detach());
-      sa.PutElement(index, va);
+      CreateSafeArray(arr[i], osa);
+      VARIANT va = osa.Detach();
+      sa.PutElement(index, (VARIANT*)&va);
+      VariantClear(&va);
     }
     rc = true;
   }
   return rc;
 }
 
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
+bool CRhinoVariantHelpers::CreateSafeArray(const ON_3fVectorArray& arr, COleSafeArray& sa)
+{
+  bool rc = false;
+  int i, count = arr.Count();
+  if (count > 0)
+  {
+    DWORD numElements[1];
+    numElements[0] = (DWORD)count;
+    sa.Create(VT_VARIANT, 1, numElements);
+    long index[1];
+    for (i = 0; i < count; i++)
+    {
+      index[0] = (long)i;
+      COleSafeArray osa;
+      CreateSafeArray(arr[i], osa);
+      VARIANT va = osa.Detach();
+      sa.PutElement(index, (VARIANT*)&va);
+      VariantClear(&va);
+    }
+    rc = true;
+  }
+  return rc;
+}
 
-void CRhinoCom::XformToSafeArray(const ON_Xform& xform, COleSafeArray& sa)
+bool CRhinoVariantHelpers::CreateSafeArray(const ON_Xform& xform, COleSafeArray& sa)
 {
   DWORD numElements[] = { 4, 4 };
   sa.Create(VT_VARIANT, 2, numElements);
@@ -2042,29 +1891,20 @@ void CRhinoCom::XformToSafeArray(const ON_Xform& xform, COleSafeArray& sa)
       VariantClear(&v);
     }
   }
+  return true;
 }
 
-bool CRhinoCom::PlaneToSafeArray(const ON_Plane& plane, COleSafeArray& sa)
+bool CRhinoVariantHelpers::CreateSafeArray(const ON_Plane& plane, COleSafeArray& sa)
 {
   ON_3dPointArray arr;
   arr.Append(plane.origin);
   arr.Append(plane.xaxis);
   arr.Append(plane.yaxis);
   arr.Append(plane.zaxis);
-  return PointArrayToSafeArray(arr, sa);
+  return CreateSafeArray(arr, sa);
 }
 
-void CRhinoCom::MeshFaceToSafeArray(const ON_MeshFace& face, COleSafeArray& sa)
-{
-  COleVariant var[4];
-  var[0] = (long)face.vi[0];
-  var[1] = (long)face.vi[1];
-  var[2] = (long)face.vi[2];
-  var[3] = (long)face.vi[3];
-  sa.CreateOneDim(VT_VARIANT, 4, var);
-}
-
-bool CRhinoCom::MeshFaceArrayToSafeArray(const ON_SimpleArray<ON_MeshFace>& arr, COleSafeArray& sa)
+bool CRhinoVariantHelpers::CreateSafeArray(const ON_SimpleArray<ON_Plane>& arr, COleSafeArray& sa)
 {
   bool rc = false;
   int i, count = arr.Count();
@@ -2078,134 +1918,17 @@ bool CRhinoCom::MeshFaceArrayToSafeArray(const ON_SimpleArray<ON_MeshFace>& arr,
     {
       index[0] = (long)i;
       COleSafeArray osa;
-      MeshFaceToSafeArray(arr[i], osa);
-      COleVariant va;
-      va.Attach(osa.Detach());
-      sa.PutElement(index, va);
+      CreateSafeArray(arr[i], osa);
+      VARIANT va = osa.Detach();
+      sa.PutElement(index, (VARIANT*)&va);
+      VariantClear(&va);
     }
     rc = true;
   }
   return rc;
 }
 
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-
-bool CRhinoCom::StringToUUID(const wchar_t* uuid_str, ON_UUID& uuid)
-{
-  bool rc = false;
-  if (uuid_str && uuid_str[0])
-  {
-    ON_wString str(uuid_str);
-    str.TrimLeftAndRight();
-    if (str.Length())
-    {
-      ON_UUID temp_uuid = ON_UuidFromString(str);
-      if (ON_UuidIsNotNil(temp_uuid))
-      {
-        uuid = temp_uuid;
-        rc = true;
-      }
-    }
-  }
-  return rc;
-}
-
-bool CRhinoCom::UUIDToString(const ON_UUID& uuid, ON_wString& uuid_str)
-{
-  bool rc = false;
-  if (ON_UuidToString(uuid, uuid_str))
-  {
-    uuid_str.MakeUpper();
-    rc = true;
-  }
-  return rc;
-}
-
-bool CRhinoCom::UUIDToString(const ON_UUID& uuid, CString& uuid_str)
-{
-  bool rc = false;
-  ON_wString str;
-  if (UUIDToString(uuid, str))
-  {
-    uuid_str = str;
-    uuid_str.MakeUpper();
-    rc = true;
-  }
-  return rc;
-}
-
-CString CRhinoCom::UUIDToString(const ON_UUID& uuid)
-{
-  CString str;
-  UUIDToString(uuid, str);
-  str.MakeUpper();
-  return str;
-}
-
-int CRhinoCom::UuidArrayToStringArray(const ON_SimpleArray<ON_UUID>& uuids, ON_ClassArray<ON_wString>& strings)
-{
-  int i;
-  for (i = 0; i < uuids.Count(); i++)
-  {
-    ON_wString uuid_str;
-    if (UUIDToString(uuids[i], uuid_str))
-      strings.Append(uuid_str);
-  }
-  return strings.Count();
-}
-
-int CRhinoCom::UuidArrayToStringArray(const ON_SimpleArray<ON_UUID>& uuids, CStringArray& strings)
-{
-  int i;
-  for (i = 0; i < uuids.Count(); i++)
-  {
-    CString uuid_str;
-    if (UUIDToString(uuids[i], uuid_str))
-      strings.Add(uuid_str);
-  }
-  return (int)strings.GetCount();
-}
-
-bool CRhinoCom::ObjectToString(const CRhinoObject* object, ON_wString& string)
-{
-  bool rc = false;
-  if (object)
-  {
-    if (ON_UuidToString(object->Attributes().m_uuid, string))
-      rc = true;
-  }
-  return rc;
-}
-
-bool CRhinoCom::ObjectToString(const CRhinoObject* object, CString& string)
-{
-  bool rc = false;
-  ON_wString str;
-  if (ObjectToString(object, str))
-  {
-    string = str;
-    rc = true;
-  }
-  return rc;
-}
-
-int CRhinoCom::StringArrayToObjectArray(const ON_ClassArray<ON_wString>& strings, ON_SimpleArray<const CRhinoObject*>& objects)
-{
-  int i, num_added = 0;
-  for (i = 0; i < strings.Count(); i++)
-  {
-    const CRhinoObject* obj = RhinoObject(strings[i]);
-    if (obj)
-    {
-      objects.Append(obj);
-      num_added++;
-    }
-  }
-  return num_added;
-}
-
-int CRhinoCom::ObjectArrayToStringArray(const ON_SimpleArray<const CRhinoObject*>& objects, ON_ClassArray<ON_wString>& strings)
+int CRhinoVariantHelpers::ObjectArrayToStringArray(const ON_SimpleArray<const CRhinoObject*>& objects, ON_ClassArray<ON_wString>& strings)
 {
   int i, num_added = 0;
   for (i = 0; i < objects.Count(); i++)
@@ -2224,7 +1947,7 @@ int CRhinoCom::ObjectArrayToStringArray(const ON_SimpleArray<const CRhinoObject*
   return num_added++;
 }
 
-int CRhinoCom::ObjectArrayToStringArray(const ON_SimpleArray<CRhinoObject*>& objects, ON_ClassArray<ON_wString>& strings)
+int CRhinoVariantHelpers::ObjectArrayToStringArray(const ON_SimpleArray<CRhinoObject*>& objects, ON_ClassArray<ON_wString>& strings)
 {
   int i, num_added = 0;
   for (i = 0; i < objects.Count(); i++)
@@ -2243,10 +1966,7 @@ int CRhinoCom::ObjectArrayToStringArray(const ON_SimpleArray<CRhinoObject*>& obj
   return num_added++;
 }
 
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-
-int CRhinoCom::VariantArrayToBooleanArray(SAFEARRAY* psa, ON_SimpleArray<bool>& arr, bool bQuiet)
+int CRhinoVariantHelpers::VariantArrayToBooleanArray(SAFEARRAY* psa, ON_SimpleArray<bool>& arr, bool bQuiet)
 {
   ASSERT(psa);
   arr.Empty();
@@ -2263,7 +1983,7 @@ int CRhinoCom::VariantArrayToBooleanArray(SAFEARRAY* psa, ON_SimpleArray<bool>& 
       for (i = lower; i <= upper; i++)
       {
         bool b = false;
-        if (VariantToBoolean(pvData[i], b, bQuiet))
+        if (ConvertVariant(pvData[i], b, bQuiet))
           arr.Append(b);
       }
       SafeArrayUnaccessData(psa);
@@ -2271,19 +1991,19 @@ int CRhinoCom::VariantArrayToBooleanArray(SAFEARRAY* psa, ON_SimpleArray<bool>& 
     else
     {
       if (false == bQuiet)
-        ThrowOleDispatchException(err_array_required);
+        ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
     }
   }
   else
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
   }
 
   return arr.Count();
 }
 
-int CRhinoCom::VariantArrayToIntegerArray(SAFEARRAY* psa, ON_SimpleArray<int>& arr, bool bQuiet)
+int CRhinoVariantHelpers::VariantArrayToIntegerArray(SAFEARRAY* psa, ON_SimpleArray<int>& arr, bool bQuiet)
 {
   ASSERT(psa);
   arr.Empty();
@@ -2300,7 +2020,7 @@ int CRhinoCom::VariantArrayToIntegerArray(SAFEARRAY* psa, ON_SimpleArray<int>& a
       for (i = lower; i <= upper; i++)
       {
         int n = 0;
-        if (VariantToInteger(pvData[i], n, bQuiet))
+        if (ConvertVariant(pvData[i], n, bQuiet))
           arr.Append(n);
       }
       SafeArrayUnaccessData(psa);
@@ -2308,19 +2028,19 @@ int CRhinoCom::VariantArrayToIntegerArray(SAFEARRAY* psa, ON_SimpleArray<int>& a
     else
     {
       if (false == bQuiet)
-        ThrowOleDispatchException(err_array_required);
+        ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
     }
   }
   else
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
   }
 
   return arr.Count();
 }
 
-int CRhinoCom::VariantArrayToFloatArray(SAFEARRAY* psa, ON_SimpleArray<float>& arr, bool bQuiet)
+int CRhinoVariantHelpers::VariantArrayToFloatArray(SAFEARRAY* psa, ON_SimpleArray<float>& arr, bool bQuiet)
 {
   ASSERT(psa);
   arr.Empty();
@@ -2337,7 +2057,7 @@ int CRhinoCom::VariantArrayToFloatArray(SAFEARRAY* psa, ON_SimpleArray<float>& a
       for (i = lower; i <= upper; i++)
       {
         float f = 0.0;
-        if (VariantToFloat(pvData[i], f, bQuiet))
+        if (ConvertVariant(pvData[i], f, bQuiet))
           arr.Append(f);
       }
       SafeArrayUnaccessData(psa);
@@ -2345,19 +2065,19 @@ int CRhinoCom::VariantArrayToFloatArray(SAFEARRAY* psa, ON_SimpleArray<float>& a
     else
     {
       if (false == bQuiet)
-        ThrowOleDispatchException(err_array_required);
+        ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
     }
   }
   else
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
   }
 
   return arr.Count();
 }
 
-int CRhinoCom::VariantArrayToDoubleArray(SAFEARRAY* psa, ON_SimpleArray<double>& arr, bool bQuiet)
+int CRhinoVariantHelpers::VariantArrayToDoubleArray(SAFEARRAY* psa, ON_SimpleArray<double>& arr, bool bQuiet)
 {
   ASSERT(psa);
   arr.Empty();
@@ -2374,7 +2094,7 @@ int CRhinoCom::VariantArrayToDoubleArray(SAFEARRAY* psa, ON_SimpleArray<double>&
       for (i = lower; i <= upper; i++)
       {
         double d = 0.0;
-        if (VariantToDouble(pvData[i], d, bQuiet))
+        if (ConvertVariant(pvData[i], d, bQuiet))
           arr.Append(d);
       }
       SafeArrayUnaccessData(psa);
@@ -2382,19 +2102,19 @@ int CRhinoCom::VariantArrayToDoubleArray(SAFEARRAY* psa, ON_SimpleArray<double>&
     else
     {
       if (false == bQuiet)
-        ThrowOleDispatchException(err_array_required);
+        ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
     }
   }
   else
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
   }
 
   return arr.Count();
 }
 
-int CRhinoCom::VariantArrayToStringArray(SAFEARRAY* psa, ON_ClassArray<ON_wString>& arr, bool bQuiet)
+int CRhinoVariantHelpers::VariantArrayToStringArray(SAFEARRAY* psa, ON_ClassArray<ON_wString>& arr, bool bQuiet)
 {
   ASSERT(psa);
   arr.Empty();
@@ -2411,7 +2131,7 @@ int CRhinoCom::VariantArrayToStringArray(SAFEARRAY* psa, ON_ClassArray<ON_wStrin
       for (i = lower; i <= upper; i++)
       {
         ON_wString str;
-        if (VariantToString(pvData[i], str, bQuiet))
+        if (ConvertVariant(pvData[i], str, bQuiet))
           arr.Append(str);
       }
       SafeArrayUnaccessData(psa);
@@ -2419,58 +2139,56 @@ int CRhinoCom::VariantArrayToStringArray(SAFEARRAY* psa, ON_ClassArray<ON_wStrin
     else
     {
       if (false == bQuiet)
-        ThrowOleDispatchException(err_array_required);
+        ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
     }
   }
   else
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
   }
 
   return arr.Count();
 }
 
-int CRhinoCom::VariantArrayToStringArray(SAFEARRAY* psa, CStringArray& arr, bool bQuiet)
+int CRhinoVariantHelpers::VariantArrayToColorArray(SAFEARRAY* psa, ON_SimpleArray<ON_Color>& arr, bool bQuiet)
 {
   ASSERT(psa);
-  arr.RemoveAll();
+  arr.Empty();
   long i, lower, upper;
   HRESULT hl = SafeArrayGetLBound(psa, 1, &lower);
   HRESULT hu = SafeArrayGetUBound(psa, 1, &upper);
   if (SUCCEEDED(hl) && SUCCEEDED(hu))
   {
+    arr.SetCapacity(upper - lower + 1);
     VARIANT* pvData = 0;
     HRESULT hr = SafeArrayAccessData(psa, (void HUGEP**)&pvData);
     if (SUCCEEDED(hr) && pvData)
     {
       for (i = lower; i <= upper; i++)
       {
-        CString str;
-        if (VariantToString(pvData[i], str, bQuiet))
-          arr.Add(str);
+        ON_Color c;
+        if (ConvertVariant(pvData[i], c, bQuiet))
+          arr.Append(c);
       }
       SafeArrayUnaccessData(psa);
     }
     else
     {
       if (false == bQuiet)
-        ThrowOleDispatchException(err_array_required);
+        ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
     }
   }
   else
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
   }
 
-  return (int)arr.GetCount(); // (int) cast for x64 builds
+  return arr.Count();
 }
 
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-
-bool CRhinoCom::VariantArrayToPoint(SAFEARRAY* psa, ON_2dPoint& pt, bool bQuiet)
+bool CRhinoVariantHelpers::VariantArrayToPoint(SAFEARRAY* psa, ON_2dPoint& pt, bool bQuiet)
 {
   ASSERT(psa);
   bool rc = false;
@@ -2485,28 +2203,35 @@ bool CRhinoCom::VariantArrayToPoint(SAFEARRAY* psa, ON_2dPoint& pt, bool bQuiet)
     {
       double p[] = { 0.0, 0.0 };
       for (i = lower; i <= upper; i++)
-        VariantToDouble(pvData[i], p[i], bQuiet);
+        for (i = lower; i <= upper; i++)
+        {
+          rc = ConvertVariant(pvData[i], p[i], bQuiet);
+          if (!rc)
+            break;
+        }
       SafeArrayUnaccessData(psa);
-      pt.x = p[0];
-      pt.y = p[1];
-      rc = true;
+      if (rc)
+      {
+        pt.x = p[0];
+        pt.y = p[1];
+      }
     }
     else
     {
       if (false == bQuiet)
-        ThrowOleDispatchException(err_array_required);
+        ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
     }
   }
   else
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
   }
 
   return rc;
 }
 
-bool CRhinoCom::VariantArrayToPoint(SAFEARRAY* psa, ON_3dPoint& pt, bool bQuiet)
+bool CRhinoVariantHelpers::VariantArrayToPoint(SAFEARRAY* psa, ON_3dPoint& pt, bool bQuiet)
 {
   ASSERT(psa);
   bool rc = false;
@@ -2521,29 +2246,35 @@ bool CRhinoCom::VariantArrayToPoint(SAFEARRAY* psa, ON_3dPoint& pt, bool bQuiet)
     {
       double p[] = { 0.0, 0.0, 0.0 };
       for (i = lower; i <= upper; i++)
-        VariantToDouble(pvData[i], p[i], bQuiet);
+      {
+        rc = ConvertVariant(pvData[i], p[i], bQuiet);
+        if (!rc)
+          break;
+      }
       SafeArrayUnaccessData(psa);
-      pt.x = p[0];
-      pt.y = p[1];
-      pt.z = p[2];
-      rc = true;
+      if (rc)
+      {
+        pt.x = p[0];
+        pt.y = p[1];
+        pt.z = p[2];
+      }
     }
     else
     {
       if (false == bQuiet)
-        ThrowOleDispatchException(err_array_required);
+        ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
     }
   }
   else
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
   }
 
   return rc;
 }
 
-bool CRhinoCom::VariantArrayToPoint(SAFEARRAY* psa, ON_3fPoint& pt, bool bQuiet)
+bool CRhinoVariantHelpers::VariantArrayToPoint(SAFEARRAY* psa, ON_3fPoint& pt, bool bQuiet)
 {
   ASSERT(psa);
   bool rc = false;
@@ -2558,29 +2289,35 @@ bool CRhinoCom::VariantArrayToPoint(SAFEARRAY* psa, ON_3fPoint& pt, bool bQuiet)
     {
       float p[] = { 0.0, 0.0, 0.0 };
       for (i = lower; i <= upper; i++)
-        VariantToFloat(pvData[i], p[i], bQuiet);
+      {
+        rc = ConvertVariant(pvData[i], p[i], bQuiet);
+        if (!rc)
+          break;
+      }
       SafeArrayUnaccessData(psa);
-      pt.x = p[0];
-      pt.y = p[1];
-      pt.z = p[2];
-      rc = true;
+      if (rc)
+      {
+        pt.x = p[0];
+        pt.y = p[1];
+        pt.z = p[2];
+      }
     }
     else
     {
       if (false == bQuiet)
-        ThrowOleDispatchException(err_array_required);
+        ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
     }
   }
   else
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
   }
 
   return rc;
 }
 
-bool CRhinoCom::VariantArrayToPoint(SAFEARRAY* psa, ON_4dPoint& pt, bool bQuiet)
+bool CRhinoVariantHelpers::VariantArrayToPoint(SAFEARRAY* psa, ON_4dPoint& pt, bool bQuiet)
 {
   ASSERT(psa);
   bool rc = false;
@@ -2595,30 +2332,36 @@ bool CRhinoCom::VariantArrayToPoint(SAFEARRAY* psa, ON_4dPoint& pt, bool bQuiet)
     {
       double p[] = { 0.0, 0.0, 0.0, 0.0 };
       for (i = lower; i <= upper; i++)
-        VariantToDouble(pvData[i], p[i], bQuiet);
+      {
+        rc = ConvertVariant(pvData[i], p[i], bQuiet);
+        if (!rc)
+          break;
+      }
       SafeArrayUnaccessData(psa);
-      pt.x = p[0];
-      pt.y = p[1];
-      pt.z = p[2];
-      pt.w = p[3];
-      rc = true;
+      if (rc)
+      {
+        pt.x = p[0];
+        pt.y = p[1];
+        pt.z = p[2];
+        pt.w = p[3];
+      }
     }
     else
     {
       if (false == bQuiet)
-        ThrowOleDispatchException(err_array_required);
+        ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
     }
   }
   else
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
   }
 
   return rc;
 }
 
-bool CRhinoCom::VariantArrayToPoint(SAFEARRAY* psa, ON_4fPoint& pt, bool bQuiet)
+bool CRhinoVariantHelpers::VariantArrayToPoint(SAFEARRAY* psa, ON_4fPoint& pt, bool bQuiet)
 {
   ASSERT(psa);
   bool rc = false;
@@ -2633,33 +2376,36 @@ bool CRhinoCom::VariantArrayToPoint(SAFEARRAY* psa, ON_4fPoint& pt, bool bQuiet)
     {
       float p[] = { 0.0, 0.0, 0.0, 0.0 };
       for (i = lower; i <= upper; i++)
-        VariantToFloat(pvData[i], p[i], bQuiet);
+      {
+        rc = ConvertVariant(pvData[i], p[i], bQuiet);
+        if (!rc)
+          break;
+      }
       SafeArrayUnaccessData(psa);
-      pt.x = p[0];
-      pt.y = p[1];
-      pt.z = p[2];
-      pt.w = p[3];
-      rc = true;
+      if (rc)
+      {
+        pt.x = p[0];
+        pt.y = p[1];
+        pt.z = p[2];
+        pt.w = p[3];
+      }
     }
     else
     {
       if (false == bQuiet)
-        ThrowOleDispatchException(err_array_required);
+        ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
     }
   }
   else
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
   }
 
   return rc;
 }
 
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-
-int CRhinoCom::VariantArrayToPointArray(SAFEARRAY* psa, ON_2dPointArray& arr, bool bQuiet)
+int CRhinoVariantHelpers::VariantArrayToPointArray(SAFEARRAY* psa, ON_2dPointArray& arr, bool bQuiet)
 {
   ASSERT(psa);
   arr.Empty();
@@ -2670,7 +2416,7 @@ int CRhinoCom::VariantArrayToPointArray(SAFEARRAY* psa, ON_2dPointArray& arr, bo
   if (FAILED(hl) || FAILED(hu))
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
     return 0;
   }
 
@@ -2680,7 +2426,7 @@ int CRhinoCom::VariantArrayToPointArray(SAFEARRAY* psa, ON_2dPointArray& arr, bo
   if (FAILED(hr))
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
     return 0;
   }
 
@@ -2690,7 +2436,7 @@ int CRhinoCom::VariantArrayToPointArray(SAFEARRAY* psa, ON_2dPointArray& arr, bo
   {
     int stride = 2;
     ON_SimpleArray<double> vals;
-    int count = VariantToArray(va, vals, bQuiet);
+    int count = ConvertVariant(va, vals, bQuiet);
     if (count && count % stride == 0)
     {
       int i, point_count = count / stride;
@@ -2710,7 +2456,7 @@ int CRhinoCom::VariantArrayToPointArray(SAFEARRAY* psa, ON_2dPointArray& arr, bo
     else
     {
       if (false == bQuiet)
-        ThrowOleDispatchException(err_array_required);
+        ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
       return 0;
     }
   }
@@ -2724,7 +2470,7 @@ int CRhinoCom::VariantArrayToPointArray(SAFEARRAY* psa, ON_2dPointArray& arr, bo
       for (i = lower; i <= upper; i++)
       {
         ON_2dPoint pt;
-        if (VariantToPoint(pvData[i], pt, bQuiet))
+        if (ConvertVariant(pvData[i], pt, bQuiet))
           arr.Append(pt);
       }
       SafeArrayUnaccessData(psa);
@@ -2734,7 +2480,7 @@ int CRhinoCom::VariantArrayToPointArray(SAFEARRAY* psa, ON_2dPointArray& arr, bo
   return arr.Count();
 }
 
-int CRhinoCom::VariantArrayToPointArray(SAFEARRAY* psa, ON_3dPointArray& arr, bool bQuiet)
+int CRhinoVariantHelpers::VariantArrayToPointArray(SAFEARRAY* psa, ON_3dPointArray& arr, bool bQuiet)
 {
   ASSERT(psa);
   arr.Empty();
@@ -2745,7 +2491,7 @@ int CRhinoCom::VariantArrayToPointArray(SAFEARRAY* psa, ON_3dPointArray& arr, bo
   if (FAILED(hl) || FAILED(hu))
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
     return 0;
   }
 
@@ -2755,7 +2501,7 @@ int CRhinoCom::VariantArrayToPointArray(SAFEARRAY* psa, ON_3dPointArray& arr, bo
   if (FAILED(hr))
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
     return 0;
   }
 
@@ -2765,7 +2511,7 @@ int CRhinoCom::VariantArrayToPointArray(SAFEARRAY* psa, ON_3dPointArray& arr, bo
   {
     int stride = 3;
     ON_SimpleArray<double> vals;
-    int count = VariantToArray(va, vals, bQuiet);
+    int count = ConvertVariant(va, vals, bQuiet);
     if (count && count % stride == 0)
     {
       int i, point_count = count / stride;
@@ -2786,7 +2532,7 @@ int CRhinoCom::VariantArrayToPointArray(SAFEARRAY* psa, ON_3dPointArray& arr, bo
     else
     {
       if (false == bQuiet)
-        ThrowOleDispatchException(err_array_required);
+        ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
       return 0;
     }
   }
@@ -2800,7 +2546,7 @@ int CRhinoCom::VariantArrayToPointArray(SAFEARRAY* psa, ON_3dPointArray& arr, bo
       for (i = lower; i <= upper; i++)
       {
         ON_3dPoint pt;
-        if (VariantToPoint(pvData[i], pt, bQuiet))
+        if (ConvertVariant(pvData[i], pt, bQuiet))
           arr.Append(pt);
       }
       SafeArrayUnaccessData(psa);
@@ -2810,7 +2556,7 @@ int CRhinoCom::VariantArrayToPointArray(SAFEARRAY* psa, ON_3dPointArray& arr, bo
   return arr.Count();
 }
 
-int CRhinoCom::VariantArrayToPointArray(SAFEARRAY* psa, ON_3fPointArray& arr, bool bQuiet)
+int CRhinoVariantHelpers::VariantArrayToPointArray(SAFEARRAY* psa, ON_3fPointArray& arr, bool bQuiet)
 {
   ASSERT(psa);
   arr.Empty();
@@ -2821,7 +2567,7 @@ int CRhinoCom::VariantArrayToPointArray(SAFEARRAY* psa, ON_3fPointArray& arr, bo
   if (FAILED(hl) || FAILED(hu))
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
     return 0;
   }
 
@@ -2831,7 +2577,7 @@ int CRhinoCom::VariantArrayToPointArray(SAFEARRAY* psa, ON_3fPointArray& arr, bo
   if (FAILED(hr))
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
     return 0;
   }
 
@@ -2841,7 +2587,7 @@ int CRhinoCom::VariantArrayToPointArray(SAFEARRAY* psa, ON_3fPointArray& arr, bo
   {
     int stride = 3;
     ON_SimpleArray<float> vals;
-    int count = VariantToArray(va, vals, bQuiet);
+    int count = ConvertVariant(va, vals, bQuiet);
     if (count && count % stride == 0)
     {
       int i, point_count = count / stride;
@@ -2862,7 +2608,7 @@ int CRhinoCom::VariantArrayToPointArray(SAFEARRAY* psa, ON_3fPointArray& arr, bo
     else
     {
       if (false == bQuiet)
-        ThrowOleDispatchException(err_array_required);
+        ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
       return 0;
     }
   }
@@ -2876,7 +2622,7 @@ int CRhinoCom::VariantArrayToPointArray(SAFEARRAY* psa, ON_3fPointArray& arr, bo
       for (i = lower; i <= upper; i++)
       {
         ON_3fPoint pt;
-        if (VariantToPoint(pvData[i], pt, bQuiet))
+        if (ConvertVariant(pvData[i], pt, bQuiet))
           arr.Append(pt);
       }
       SafeArrayUnaccessData(psa);
@@ -2886,7 +2632,7 @@ int CRhinoCom::VariantArrayToPointArray(SAFEARRAY* psa, ON_3fPointArray& arr, bo
   return arr.Count();
 }
 
-int CRhinoCom::VariantArrayToPointArray(SAFEARRAY* psa, ON_4dPointArray& arr, bool bQuiet)
+int CRhinoVariantHelpers::VariantArrayToPointArray(SAFEARRAY* psa, ON_4dPointArray& arr, bool bQuiet)
 {
   ASSERT(psa);
   arr.Empty();
@@ -2897,7 +2643,7 @@ int CRhinoCom::VariantArrayToPointArray(SAFEARRAY* psa, ON_4dPointArray& arr, bo
   if (FAILED(hl) || FAILED(hu))
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
     return 0;
   }
 
@@ -2907,7 +2653,7 @@ int CRhinoCom::VariantArrayToPointArray(SAFEARRAY* psa, ON_4dPointArray& arr, bo
   if (FAILED(hr))
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
     return 0;
   }
 
@@ -2917,7 +2663,7 @@ int CRhinoCom::VariantArrayToPointArray(SAFEARRAY* psa, ON_4dPointArray& arr, bo
   {
     int stride = 4;
     ON_SimpleArray<double> vals;
-    int count = VariantToArray(va, vals, bQuiet);
+    int count = ConvertVariant(va, vals, bQuiet);
     if (count && count % stride == 0)
     {
       int i, point_count = count / stride;
@@ -2939,7 +2685,7 @@ int CRhinoCom::VariantArrayToPointArray(SAFEARRAY* psa, ON_4dPointArray& arr, bo
     else
     {
       if (false == bQuiet)
-        ThrowOleDispatchException(err_array_required);
+        ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
       return 0;
     }
   }
@@ -2953,7 +2699,7 @@ int CRhinoCom::VariantArrayToPointArray(SAFEARRAY* psa, ON_4dPointArray& arr, bo
       for (i = lower; i <= upper; i++)
       {
         ON_4dPoint pt;
-        if (VariantToPoint(pvData[i], pt, bQuiet))
+        if (ConvertVariant(pvData[i], pt, bQuiet))
           arr.Append(pt);
       }
       SafeArrayUnaccessData(psa);
@@ -2963,7 +2709,7 @@ int CRhinoCom::VariantArrayToPointArray(SAFEARRAY* psa, ON_4dPointArray& arr, bo
   return arr.Count();
 }
 
-int CRhinoCom::VariantArrayToPointArray(SAFEARRAY* psa, ON_4fPointArray& arr, bool bQuiet)
+int CRhinoVariantHelpers::VariantArrayToPointArray(SAFEARRAY* psa, ON_4fPointArray& arr, bool bQuiet)
 {
   ASSERT(psa);
   arr.Empty();
@@ -2974,7 +2720,7 @@ int CRhinoCom::VariantArrayToPointArray(SAFEARRAY* psa, ON_4fPointArray& arr, bo
   if (FAILED(hl) || FAILED(hu))
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
     return 0;
   }
 
@@ -2984,7 +2730,7 @@ int CRhinoCom::VariantArrayToPointArray(SAFEARRAY* psa, ON_4fPointArray& arr, bo
   if (FAILED(hr))
   {
     if (false == bQuiet)
-      ThrowOleDispatchException(err_array_required);
+      ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
     return 0;
   }
 
@@ -2994,7 +2740,7 @@ int CRhinoCom::VariantArrayToPointArray(SAFEARRAY* psa, ON_4fPointArray& arr, bo
   {
     int stride = 4;
     ON_SimpleArray<float> vals;
-    int count = VariantToArray(va, vals, bQuiet);
+    int count = ConvertVariant(va, vals, bQuiet);
     if (count && count % stride == 0)
     {
       int i, point_count = count / stride;
@@ -3016,7 +2762,7 @@ int CRhinoCom::VariantArrayToPointArray(SAFEARRAY* psa, ON_4fPointArray& arr, bo
     else
     {
       if (false == bQuiet)
-        ThrowOleDispatchException(err_array_required);
+        ThrowOleDispatchException(CRhinoVariantHelpers::err_array_required);
       return 0;
     }
   }
@@ -3030,7 +2776,7 @@ int CRhinoCom::VariantArrayToPointArray(SAFEARRAY* psa, ON_4fPointArray& arr, bo
       for (i = lower; i <= upper; i++)
       {
         ON_4fPoint pt;
-        if (VariantToPoint(pvData[i], pt, bQuiet))
+        if (ConvertVariant(pvData[i], pt, bQuiet))
           arr.Append(pt);
       }
       SafeArrayUnaccessData(psa);
@@ -3040,10 +2786,7 @@ int CRhinoCom::VariantArrayToPointArray(SAFEARRAY* psa, ON_4fPointArray& arr, bo
   return arr.Count();
 }
 
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-
-int CRhinoCom::SafeArrayToBooleanArray(SAFEARRAY* psa, ON_SimpleArray<bool>& arr)
+int CRhinoVariantHelpers::SafeArrayToBooleanArray(SAFEARRAY* psa, ON_SimpleArray<bool>& arr)
 {
   ASSERT(psa);
   arr.Empty();
@@ -3117,7 +2860,7 @@ int CRhinoCom::SafeArrayToBooleanArray(SAFEARRAY* psa, ON_SimpleArray<bool>& arr
   return arr.Count();
 }
 
-int CRhinoCom::SafeArrayToIntegerArray(SAFEARRAY* psa, ON_SimpleArray<int>& arr)
+int CRhinoVariantHelpers::SafeArrayToIntegerArray(SAFEARRAY* psa, ON_SimpleArray<int>& arr)
 {
   ASSERT(psa);
   arr.Empty();
@@ -3180,7 +2923,7 @@ int CRhinoCom::SafeArrayToIntegerArray(SAFEARRAY* psa, ON_SimpleArray<int>& arr)
   return arr.Count();
 }
 
-int CRhinoCom::SafeArrayToFloatArray(SAFEARRAY* psa, ON_SimpleArray<float>& arr)
+int CRhinoVariantHelpers::SafeArrayToFloatArray(SAFEARRAY* psa, ON_SimpleArray<float>& arr)
 {
   ASSERT(psa);
   arr.Empty();
@@ -3243,7 +2986,7 @@ int CRhinoCom::SafeArrayToFloatArray(SAFEARRAY* psa, ON_SimpleArray<float>& arr)
   return arr.Count();
 }
 
-int CRhinoCom::SafeArrayToDoubleArray(SAFEARRAY* psa, ON_SimpleArray<double>& arr)
+int CRhinoVariantHelpers::SafeArrayToDoubleArray(SAFEARRAY* psa, ON_SimpleArray<double>& arr)
 {
   ASSERT(psa);
   arr.Empty();
@@ -3306,7 +3049,7 @@ int CRhinoCom::SafeArrayToDoubleArray(SAFEARRAY* psa, ON_SimpleArray<double>& ar
   return arr.Count();
 }
 
-int CRhinoCom::SafeArrayToStringArray(SAFEARRAY* psa, ON_ClassArray<ON_wString>& arr)
+int CRhinoVariantHelpers::SafeArrayToStringArray(SAFEARRAY* psa, ON_ClassArray<ON_wString>& arr)
 {
   ASSERT(psa);
   arr.Empty();
@@ -3335,38 +3078,83 @@ int CRhinoCom::SafeArrayToStringArray(SAFEARRAY* psa, ON_ClassArray<ON_wString>&
   return arr.Count();
 }
 
-int CRhinoCom::SafeArrayToStringArray(SAFEARRAY* psa, CStringArray& arr)
+int CRhinoVariantHelpers::SafeArrayToColorArray(SAFEARRAY* psa, ON_SimpleArray<ON_Color>& arr)
 {
   ASSERT(psa);
-  arr.RemoveAll();
-  if (psa->fFeatures & FADF_BSTR)
+  arr.Empty();
+  long i, lower, upper;
+  HRESULT hl = SafeArrayGetLBound(psa, 1, &lower);
+  HRESULT hu = SafeArrayGetUBound(psa, 1, &upper);
+  if (SUCCEEDED(hl) && SUCCEEDED(hu))
   {
-    long i, lower, upper;
-    HRESULT hl = SafeArrayGetLBound(psa, 1, &lower);
-    HRESULT hu = SafeArrayGetUBound(psa, 1, &upper);
-    if (SUCCEEDED(hl) && SUCCEEDED(hu))
+    arr.SetCapacity(upper - lower + 1);
+    VARTYPE vt = 0;
+    HRESULT hr = SafeArrayGetVartype(psa, &vt);
+    if (SUCCEEDED(hr))
     {
-      BSTR* pvData = 0;
-      HRESULT hr = SafeArrayAccessData(psa, (void HUGEP**)&pvData);
-      if (SUCCEEDED(hr) && pvData)
+      unsigned int black = 0;
+      unsigned int white = RGB(255, 255, 255);
+      if (vt == VT_BOOL)
       {
-        for (i = lower; i <= upper; i++)
+        VARIANT_BOOL* pvData = 0;
+        hr = SafeArrayAccessData(psa, (void HUGEP**)&pvData);
+        if (SUCCEEDED(hr) && pvData)
         {
-          CString str(pvData[i]);
-          if (!str.IsEmpty())
-            arr.Add(str);
+          for (i = lower; i <= upper; i++)
+            arr.Append(ON_Color(pvData[i] ? black : white));
+          SafeArrayUnaccessData(psa);
         }
-        SafeArrayUnaccessData(psa);
+      }
+      else if (vt == VT_I4)
+      {
+        long* pvData = 0;
+        hr = SafeArrayAccessData(psa, (void HUGEP**)&pvData);
+        if (SUCCEEDED(hr) && pvData)
+        {
+          for (i = lower; i <= upper; i++)
+            arr.Append(ON_Color(RHINO_CLAMP((unsigned int)pvData[i], black, white)));
+          SafeArrayUnaccessData(psa);
+        }
+      }
+      else if (vt == VT_I2)
+      {
+        short* pvData = 0;
+        hr = SafeArrayAccessData(psa, (void HUGEP**)&pvData);
+        if (SUCCEEDED(hr) && pvData)
+        {
+          for (i = lower; i <= upper; i++)
+            arr.Append(ON_Color(RHINO_CLAMP((unsigned int)pvData[i], black, white)));
+          SafeArrayUnaccessData(psa);
+        }
+      }
+      else if (vt == VT_R8)
+      {
+        double* pvData = 0;
+        hr = SafeArrayAccessData(psa, (void HUGEP**)&pvData);
+        if (SUCCEEDED(hr) && pvData)
+        {
+          for (i = lower; i <= upper; i++)
+            arr.Append(ON_Color(RHINO_CLAMP((unsigned int)pvData[i], black, white)));
+          SafeArrayUnaccessData(psa);
+        }
+      }
+      else if (vt == VT_R4)
+      {
+        float* pvData = 0;
+        hr = SafeArrayAccessData(psa, (void HUGEP**)&pvData);
+        if (SUCCEEDED(hr) && pvData)
+        {
+          for (i = lower; i <= upper; i++)
+            arr.Append(ON_Color(RHINO_CLAMP((unsigned int)pvData[i], black, white)));
+          SafeArrayUnaccessData(psa);
+        }
       }
     }
   }
-  return (int)arr.GetCount(); // (int) cast for x64 builds
+  return arr.Count();
 }
 
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-
-bool CRhinoCom::SafeArrayToPoint(SAFEARRAY* psa, ON_2dPoint& pt)
+bool CRhinoVariantHelpers::SafeArrayToPoint(SAFEARRAY* psa, ON_2dPoint& pt)
 {
   ASSERT(psa);
   bool rc = false;
@@ -3381,7 +3169,7 @@ bool CRhinoCom::SafeArrayToPoint(SAFEARRAY* psa, ON_2dPoint& pt)
   return rc;
 }
 
-bool CRhinoCom::SafeArrayToPoint(SAFEARRAY* psa, ON_3dPoint& pt)
+bool CRhinoVariantHelpers::SafeArrayToPoint(SAFEARRAY* psa, ON_3dPoint& pt)
 {
   ASSERT(psa);
   bool rc = false;
@@ -3404,7 +3192,7 @@ bool CRhinoCom::SafeArrayToPoint(SAFEARRAY* psa, ON_3dPoint& pt)
   return rc;
 }
 
-bool CRhinoCom::SafeArrayToPoint(SAFEARRAY* psa, ON_3fPoint& pt)
+bool CRhinoVariantHelpers::SafeArrayToPoint(SAFEARRAY* psa, ON_3fPoint& pt)
 {
   ASSERT(psa);
   bool rc = false;
@@ -3427,7 +3215,7 @@ bool CRhinoCom::SafeArrayToPoint(SAFEARRAY* psa, ON_3fPoint& pt)
   return rc;
 }
 
-bool CRhinoCom::SafeArrayToPoint(SAFEARRAY* psa, ON_4dPoint& pt)
+bool CRhinoVariantHelpers::SafeArrayToPoint(SAFEARRAY* psa, ON_4dPoint& pt)
 {
   ASSERT(psa);
   bool rc = false;
@@ -3452,7 +3240,7 @@ bool CRhinoCom::SafeArrayToPoint(SAFEARRAY* psa, ON_4dPoint& pt)
   return rc;
 }
 
-bool CRhinoCom::SafeArrayToPoint(SAFEARRAY* psa, ON_4fPoint& pt)
+bool CRhinoVariantHelpers::SafeArrayToPoint(SAFEARRAY* psa, ON_4fPoint& pt)
 {
   ASSERT(psa);
   bool rc = false;
@@ -3477,10 +3265,7 @@ bool CRhinoCom::SafeArrayToPoint(SAFEARRAY* psa, ON_4fPoint& pt)
   return rc;
 }
 
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-
-int CRhinoCom::SafeArrayToPointArray(SAFEARRAY* psa, ON_2dPointArray& arr)
+int CRhinoVariantHelpers::SafeArrayToPointArray(SAFEARRAY* psa, ON_2dPointArray& arr)
 {
   ASSERT(psa);
   int rc = 0;
@@ -3506,7 +3291,7 @@ int CRhinoCom::SafeArrayToPointArray(SAFEARRAY* psa, ON_2dPointArray& arr)
   return rc;
 }
 
-int CRhinoCom::SafeArrayToPointArray(SAFEARRAY* psa, ON_3dPointArray& arr)
+int CRhinoVariantHelpers::SafeArrayToPointArray(SAFEARRAY* psa, ON_3dPointArray& arr)
 {
   ASSERT(psa);
   int rc = 0;
@@ -3533,7 +3318,7 @@ int CRhinoCom::SafeArrayToPointArray(SAFEARRAY* psa, ON_3dPointArray& arr)
   return rc;
 }
 
-int CRhinoCom::SafeArrayToPointArray(SAFEARRAY* psa, ON_3fPointArray& arr)
+int CRhinoVariantHelpers::SafeArrayToPointArray(SAFEARRAY* psa, ON_3fPointArray& arr)
 {
   ASSERT(psa);
   int rc = 0;
@@ -3560,7 +3345,7 @@ int CRhinoCom::SafeArrayToPointArray(SAFEARRAY* psa, ON_3fPointArray& arr)
   return rc;
 }
 
-int CRhinoCom::SafeArrayToPointArray(SAFEARRAY* psa, ON_4dPointArray& arr)
+int CRhinoVariantHelpers::SafeArrayToPointArray(SAFEARRAY* psa, ON_4dPointArray& arr)
 {
   ASSERT(psa);
   int rc = 0;
@@ -3588,7 +3373,7 @@ int CRhinoCom::SafeArrayToPointArray(SAFEARRAY* psa, ON_4dPointArray& arr)
   return rc;
 }
 
-int CRhinoCom::SafeArrayToPointArray(SAFEARRAY* psa, ON_4fPointArray& arr)
+int CRhinoVariantHelpers::SafeArrayToPointArray(SAFEARRAY* psa, ON_4fPointArray& arr)
 {
   ASSERT(psa);
   int rc = 0;
@@ -3614,4 +3399,87 @@ int CRhinoCom::SafeArrayToPointArray(SAFEARRAY* psa, ON_4fPointArray& arr)
     rc = arr.Count();
   }
   return rc;
+}
+
+
+
+
+void CRhinoVariantHelpers::ThrowOleDispatchException(exception_type type)
+{
+  ON_wString err;
+  switch (type)
+  {
+  case err_boolean_required:
+    err = RHSTR(L"Boolean required.");
+    break;
+  case err_short_required:
+    err = RHSTR(L"Short integer required.");
+    break;
+  case err_long_requried:
+    err = RHSTR(L"Long integer required.");
+    break;
+  case err_integer_required:
+    err = RHSTR(L"Integer required.");
+    break;
+  case err_float_required:
+    err = RHSTR(L"Float required.");
+    break;
+  case err_double_required:
+    err = RHSTR(L"Double required.");
+    break;
+  case err_string_required:
+    err = RHSTR(L"String required.");
+    break;
+  case err_point_required:
+    err = RHSTR(L"Point required.");
+    break;
+  case err_uuid_required:
+    err = RHSTR(L"Identifier required.");
+    break;
+  case err_array_required:
+    err = RHSTR(L"Array required.");
+    break;
+  case err_array_one_dim_required:
+    err = RHSTR(L"One-dimensional array required.");
+    break;
+  case err_array_two_dim_required:
+    err = RHSTR(L"Two-dimensional array required.");
+    break;
+  case err_boolean_array_required:
+    err = RHSTR(L"Array of booleans required.");
+    break;
+  case err_short_array_required:
+    err = RHSTR(L"Array of short integers required.");
+    break;
+  case err_long_array_requried:
+    err = RHSTR(L"Array of long integers required.");
+    break;
+  case err_integer_array_required:
+    err = RHSTR(L"Array of integers required.");
+    break;
+  case err_float_array_required:
+    err = RHSTR(L"Array of floats required.");
+    break;
+  case err_double_array_required:
+    err = RHSTR(L"Array of doubles required.");
+    break;
+  case err_string_array_required:
+    err = RHSTR(L"Array of string required.");
+    break;
+  case err_point_array_required:
+    err = RHSTR(L"Array of points required.");
+    break;
+  case err_uuid_array_required:
+    err = RHSTR(L"Array of identifier required.");
+    break;
+  case err_unknown:
+  default:
+    err = RHSTR(L"Unknown error.");
+    break;
+  }
+
+  ON_wString msg;
+  msg.Format(RHSTR(L"Type mismatch in parameter. %s"), static_cast<const wchar_t*>(err));
+
+  ::AfxThrowOleDispatchException((WORD)type, static_cast<const wchar_t*>(msg));
 }

@@ -1,30 +1,26 @@
-// Copyright (c) 1993-2016 Robert McNeel & Associates. All rights reserved.
+﻿// Copyright (c) 1993-2018 Robert McNeel & Associates. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 // AnalysisToolsPlugIn.cpp 
 
 #include "StdAfx.h"
+#include "rhinoSdkPlugInDeclare.h"
 #include "AnalysisToolsPlugIn.h"
 #include "AnalysisUserData.h"
+#include "Resource.h"
 
-#pragma warning( push )
-#pragma warning( disable : 4073 )
-#pragma init_seg( lib )
-#pragma warning( pop )
+#pragma warning(push)
+#pragma warning(disable : 4073)
+#pragma init_seg(lib)
+#pragma warning(pop)
 
-// Rhino plug-in declaration
+// Rhino plug-in declarations
 RHINO_PLUG_IN_DECLARE
-
-// Rhino plug-in name
 RHINO_PLUG_IN_NAME(L"Analysis Tools");
-
-// Rhino plug-in id
 RHINO_PLUG_IN_ID(L"7B9327EE-E27D-42D2-BA44-C8D444FBD62C");
-
-// Rhino plug-in version
-RHINO_PLUG_IN_VERSION(__DATE__"  "__TIME__)
-
-// Rhino plug-in developer declarations
+RHINO_PLUG_IN_VERSION(__DATE__ "  " __TIME__)
+RHINO_PLUG_IN_DESCRIPTION(L"AnalysisTools for Rhinoceros®");
+RHINO_PLUG_IN_ICON_RESOURCE_ID(IDI_ICON);
 RHINO_PLUG_IN_DEVELOPER_ORGANIZATION(L"Robert McNeel & Associates");
 RHINO_PLUG_IN_DEVELOPER_ADDRESS(L"3670 Woodland Park Avenue North\015\012Seattle WA 98103");
 RHINO_PLUG_IN_DEVELOPER_COUNTRY(L"United States");
@@ -35,7 +31,7 @@ RHINO_PLUG_IN_DEVELOPER_WEBSITE(L"http://www.rhino3d.com");
 RHINO_PLUG_IN_UPDATE_URL(L"https://github.com/dalefugier/analysistools/");
 
 // The one and only CAnalysisToolsPlugIn object
-static CAnalysisToolsPlugIn thePlugIn;
+static class CAnalysisToolsPlugIn thePlugIn;
 
 const wchar_t* RHSTR(const wchar_t* s)
 {
@@ -52,16 +48,12 @@ const wchar_t* RHSTR_LIT(const wchar_t* s)
 
 CAnalysisToolsPlugIn& AnalysisToolsPlugIn()
 {
-  return thePlugIn;
+	return thePlugIn;
 }
 
 CAnalysisToolsPlugIn::CAnalysisToolsPlugIn()
 {
-  m_plugin_version = RhinoPlugInVersion();
-}
-
-CAnalysisToolsPlugIn::~CAnalysisToolsPlugIn()
-{
+	m_plugin_version = RhinoPlugInVersion();
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -69,38 +61,34 @@ CAnalysisToolsPlugIn::~CAnalysisToolsPlugIn()
 
 const wchar_t* CAnalysisToolsPlugIn::PlugInName() const
 {
-  return RHSTR(L"Analysis Tools");
-}
-
-const wchar_t* CAnalysisToolsPlugIn::LocalPlugInName() const
-{
-  return RHSTR_LIT(L"Analysis Tools");
+	return RhinoPlugInName();
 }
 
 const wchar_t* CAnalysisToolsPlugIn::PlugInVersion() const
 {
-  return m_plugin_version;
+	return m_plugin_version;
 }
 
 GUID CAnalysisToolsPlugIn::PlugInID() const
 {
-  // {7B9327EE-E27D-42D2-BA44-C8D444FBD62C}
-  return ON_UuidFromString(RhinoPlugInId());
+	return ON_UuidFromString(RhinoPlugInId());
 }
+
+/////////////////////////////////////////////////////////////////////////////
+// Additional overrides
 
 BOOL CAnalysisToolsPlugIn::OnLoadPlugIn()
 {
-  return CRhinoFileImportPlugIn::OnLoadPlugIn();
+	return TRUE;
 }
 
 void CAnalysisToolsPlugIn::OnUnloadPlugIn()
 {
-  CRhinoFileImportPlugIn::OnUnloadPlugIn();
 }
 
 LPUNKNOWN CAnalysisToolsPlugIn::GetPlugInObjectInterface(const ON_UUID& iid)
 {
-  LPUNKNOWN lpUnknown = 0;
+  LPUNKNOWN lpUnknown = nullptr;
 
   if (iid == IID_IUnknown)
     lpUnknown = m_object.GetInterface(&IID_IUnknown);
@@ -114,15 +102,18 @@ LPUNKNOWN CAnalysisToolsPlugIn::GetPlugInObjectInterface(const ON_UUID& iid)
   return lpUnknown;
 }
 
-void CAnalysisToolsPlugIn::AddFileType(ON_ClassArray<CRhinoFileType>& ftypes, const CRhinoFileReadOptions& options)
-{
-  m_false_color_index = ftypes.Count();
-  CRhinoFileType ft1(PlugInID(), RHSTR(L"Rhino Analysis Mesh Files (*.ram)"), L"ram");
-  ftypes.Append(ft1);
+/////////////////////////////////////////////////////////////////////////////
+// File import overrides
 
-  m_tecplot_index = ftypes.Count();
+void CAnalysisToolsPlugIn::AddFileType(ON_ClassArray<CRhinoFileType>& extensions, const CRhinoFileReadOptions& options)
+{
+  m_false_color_index = extensions.Count();
+  CRhinoFileType ft1(PlugInID(), RHSTR(L"Rhino Analysis Mesh Files (*.ram)"), L"ram");
+  extensions.Append(ft1);
+
+  m_tecplot_index = extensions.Count();
   CRhinoFileType ft2(PlugInID(), RHSTR(L"Tecplot Files (*.tp)"), L"tp");
-  ftypes.Append(ft2);
+  extensions.Append(ft2);
 }
 
 static bool IsNumeric(wchar_t c)
@@ -305,7 +296,6 @@ static const wchar_t* ParseCount(const wchar_t* line, const wchar_t* string, int
     return 0;
 
   s = SkipJunk(s + string_length);
-  int i = 0;
   s = ParseInt(s, count);
   if (0 == s)
     count = 0;
@@ -392,8 +382,8 @@ public:
   int JMAX;
   int KMAX;
   ON_SimpleArray<TP_POINT> tp;
-  int Index(int i, int j, int k) { return (i + (j + k*JMAX)*IMAX); }
-  TP_POINT& Point(int i, int j, int k) { return tp[(i + (j + k*JMAX)*IMAX)]; }
+  int Index(int i, int j, int k) { return (i + (j + k * JMAX)*IMAX); }
+  TP_POINT& Point(int i, int j, int k) { return tp[(i + (j + k * JMAX)*IMAX)]; }
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -476,7 +466,7 @@ ON_Mesh* CAnalysisToolsPlugIn::ReadStructuredTechPlotFile(FILE* fp, ON_Mesh* mes
 
   if (grid.tp.Count() == IMAX * JMAX * KMAX)
   {
-    if (0 == mesh)
+    if (nullptr == mesh)
       mesh = new ON_Mesh();
 
     CAnalysisUserData* ud = new CAnalysisUserData();
@@ -593,8 +583,7 @@ ON_Mesh* CAnalysisToolsPlugIn::ReadFalseColorMeshFile(FILE* fp, ON_Mesh* mesh)
   ON_SimpleArray<ON_3dPoint> v(vcount);
   ON_SimpleArray<double> a(vcount);
 
-  int i;
-  for (i = 0; i < vcount; i++)
+  for (int i = 0; i < vcount; i++)
   {
     if (!fgetws(line, 127, fp))
       return 0;
@@ -603,7 +592,7 @@ ON_Mesh* CAnalysisToolsPlugIn::ReadFalseColorMeshFile(FILE* fp, ON_Mesh* mesh)
   }
 
   ON_SimpleArray<ON_MeshFace> f(fcount);
-  for (i = 0; i < fcount; i++)
+  for (int i = 0; i < fcount; i++)
   {
     if (!fgetws(line, 127, fp))
       return 0;
@@ -619,10 +608,10 @@ ON_Mesh* CAnalysisToolsPlugIn::ReadFalseColorMeshFile(FILE* fp, ON_Mesh* mesh)
   mesh->m_V.Reserve(vcount);
   mesh->m_F.Reserve(fcount);
 
-  for (i = 0; i < vcount; i++)
+  for (int i = 0; i < vcount; i++)
     mesh->m_V.AppendNew() = v[i];
 
-  for (i = 0; i < fcount; i++)
+  for (int i = 0; i < fcount; i++)
     mesh->m_F.AppendNew() = f[i];
 
   mesh->ComputeVertexNormals();
@@ -633,7 +622,7 @@ ON_Mesh* CAnalysisToolsPlugIn::ReadFalseColorMeshFile(FILE* fp, ON_Mesh* mesh)
   double mn, mx;
   mn = mx = a[0];
 
-  for (i = 1; i < a.Count(); i++)
+  for (int i = 1; i < a.Count(); i++)
   {
     double x = a[i];
     if (x < mn)
@@ -655,12 +644,12 @@ BOOL CAnalysisToolsPlugIn::ReadFile(const wchar_t* filename, int index, CRhinoDo
   ON_Workspace ws;
   bool rc = false;
 
-  bool bBatchMode = (0 != options.Mode(CRhinoFileReadOptions::BatchMode));
+  bool bBatchMode = (0 != options.Mode(CRhinoFileReadOptions::ModeFlag::BatchMode));
 
   if (filename && filename[0])
   {
     FILE* fp = ws.OpenFile(filename, L"r");
-    if (0 == fp)
+    if (nullptr == fp)
     {
       ON_wString msg;
       msg.Format(RHSTR(L"Unable to open file \"%s\""), filename);
@@ -672,13 +661,13 @@ BOOL CAnalysisToolsPlugIn::ReadFile(const wchar_t* filename, int index, CRhinoDo
     }
     else
     {
-      ON_Mesh* mesh = 0;
+      ON_Mesh* mesh = nullptr;
       if (index == m_tecplot_index)
         mesh = ReadStructuredTechPlotFile(fp);
       else
         mesh = ReadFalseColorMeshFile(fp);
 
-      if (0 == mesh)
+      if (nullptr == mesh)
       {
         ON_wString msg;
         msg.Format(RHSTR(L"Unable to read file \"%s\""), filename);
@@ -697,14 +686,14 @@ BOOL CAnalysisToolsPlugIn::ReadFile(const wchar_t* filename, int index, CRhinoDo
     }
   }
 
-  if (rc &&  options.Mode(CRhinoFileReadOptions::OpenMode))
+  if (rc &&  options.Mode(CRhinoFileReadOptions::ModeFlag::OpenMode))
   {
     ON_SimpleArray<CRhinoView*> view_list;
     doc.GetViewList(view_list, true, false);
     for (int i = 0; i < view_list.Count(); i++)
     {
       CRhinoView* view = view_list[i];
-      if (view)
+      if (nullptr != view)
       {
         double border = (view->ActiveViewport().VP().Projection() == ON::parallel_view) ? 1.1 : 0.0;
         RhinoDollyExtents(view->ActiveViewport(), border);

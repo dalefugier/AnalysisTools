@@ -1,4 +1,4 @@
-// Copyright (c) 1993-2016 Robert McNeel & Associates. All rights reserved.
+// Copyright (c) 1993-2018 Robert McNeel & Associates. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 // AnalysisUserData.cpp
@@ -15,7 +15,7 @@ CAnalysisUserData::~CAnalysisUserData()
 
 ON_UUID CAnalysisUserData::Id()
 {
-  return CAnalysisUserData::m_CAnalysisUserData_class_id.Uuid();
+  return CAnalysisUserData::m_CAnalysisUserData_class_rtti.Uuid();
 }
 
 const CAnalysisUserData* CAnalysisUserData::Get(const ON_Mesh* mesh)
@@ -110,18 +110,18 @@ CAnalysisUserData& CAnalysisUserData::operator=(const CAnalysisUserData& src)
   return *this;
 }
 
-BOOL CAnalysisUserData::GetDescription(ON_wString& description)
+bool CAnalysisUserData::GetDescription(ON_wString& description)
 {
   description = RHSTR(L"Analysis Tools data");
   return true;
 }
 
-BOOL CAnalysisUserData::Archive() const
+bool CAnalysisUserData::Archive() const
 {
   return true;
 }
 
-BOOL CAnalysisUserData::Write(ON_BinaryArchive& archive) const
+bool CAnalysisUserData::Write(ON_BinaryArchive& archive) const
 {
   int major_version = 1;
   int minor_version = 0;
@@ -155,7 +155,7 @@ BOOL CAnalysisUserData::Write(ON_BinaryArchive& archive) const
   return rc;
 }
 
-BOOL CAnalysisUserData::Read(ON_BinaryArchive& archive)
+bool CAnalysisUserData::Read(ON_BinaryArchive& archive)
 {
   m_a.SetCount(0);
   m_minmax.Destroy();

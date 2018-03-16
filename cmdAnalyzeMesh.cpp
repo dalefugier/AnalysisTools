@@ -1,4 +1,4 @@
-// Copyright (c) 1993-2016 Robert McNeel & Associates. All rights reserved.
+// Copyright (c) 1993-2018 Robert McNeel & Associates. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 // cmdAnalyzeMesh.cpp
@@ -41,21 +41,21 @@ public:
 class CCommandAnalyzeMesh : public CRhinoCommand
 {
 public:
-  CCommandAnalyzeMesh() {}
-  ~CCommandAnalyzeMesh() {}
-  UUID CommandUUID()
+  CCommandAnalyzeMesh() = default;
+  ~CCommandAnalyzeMesh() = default;
+  UUID CommandUUID() override
   {
     // {F76BF44E-B863-401A-AA80-887F8B81FAC6}
     static const GUID AnalyzeMeshCommand_UUID =
     { 0xF76BF44E, 0xB863, 0x401A, { 0xAA, 0x80, 0x88, 0x7F, 0x8B, 0x81, 0xFA, 0xC6 } };
     return AnalyzeMeshCommand_UUID;
   }
-  const wchar_t* EnglishCommandName() { return L"AnalyzeMesh"; }
-  const wchar_t* LocalCommandName() { return L"AnalyzeMesh"; }
-  CRhinoCommand::result RunCommand(const CRhinoCommandContext&);
+  const wchar_t* EnglishCommandName() override { return L"AnalyzeMesh"; }
+  CRhinoCommand::result RunCommand(const CRhinoCommandContext&) override;
 
 private:
   CRhinoCommand::result GetDialogParameters(
+    CRhinoDoc& doc,
     const ON_SimpleArray<const CRhinoMeshObject*>& mesh_objects,
     const ON_Interval& minmax,
     const ON_Interval& old_redblue,
@@ -122,7 +122,7 @@ CRhinoCommand::result CCommandAnalyzeMesh::RunCommand(const CRhinoCommandContext
 
   CRhinoCommand::result rc = cancel;
   if (context.IsInteractive())
-    rc = GetDialogParameters(mesh_objects, minmax, old_redblue, redblue);
+    rc = GetDialogParameters(context.m_doc, mesh_objects, minmax, old_redblue, redblue);
   else
     rc = GetScriptParameters(mesh_objects, minmax, old_redblue, redblue);
 
@@ -157,6 +157,7 @@ CRhinoCommand::result CCommandAnalyzeMesh::RunCommand(const CRhinoCommandContext
 }
 
 CRhinoCommand::result CCommandAnalyzeMesh::GetDialogParameters(
+  CRhinoDoc& doc,
   const ON_SimpleArray<const CRhinoMeshObject*>& mesh_objects,
   const ON_Interval& minmax,
   const ON_Interval& old_redblue,
@@ -165,7 +166,7 @@ CRhinoCommand::result CCommandAnalyzeMesh::GetDialogParameters(
 {
   RhinoApp().Print(RHSTR(L"Analysis parameter varies from %g to %g.\n"), minmax[0], minmax[1]);
 
-  CAnalysisDialog dlg;
+  CAnalysisDialog dlg(doc, CWnd::FromHandle(RhinoApp().MainWnd()));
   dlg.m_minmax = minmax;
   dlg.m_range1 = old_redblue[0];
   dlg.m_range2 = old_redblue[1];

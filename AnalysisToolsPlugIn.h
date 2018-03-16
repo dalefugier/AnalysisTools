@@ -1,4 +1,4 @@
-// Copyright (c) 1993-2016 Robert McNeel & Associates. All rights reserved.
+// Copyright (c) 1993-2018 Robert McNeel & Associates. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 // AnalysisToolsPlugIn.h
@@ -7,30 +7,33 @@
 
 #include "AnalysisObject.h"
 
+// CAnalysisToolsPlugIn
+// See AnalysisToolsPlugIn.cpp for the implementation of this class
+//
+
 class CAnalysisToolsPlugIn : public CRhinoFileImportPlugIn
 {
 public:
   CAnalysisToolsPlugIn();
-  ~CAnalysisToolsPlugIn();
+  ~CAnalysisToolsPlugIn() = default;
 
   // Required overrides
-  const wchar_t* PlugInName() const;
-  const wchar_t* LocalPlugInName() const;
-  const wchar_t* PlugInVersion() const;
-  GUID PlugInID() const;
-  BOOL OnLoadPlugIn();
-  void OnUnloadPlugIn();
-
-  // Plug-in COM object access
+  const wchar_t* PlugInName() const override;
+  const wchar_t* PlugInVersion() const override;
+  GUID PlugInID() const override;
+  
+  // Additional overrides
+  BOOL OnLoadPlugIn() override;
+  void OnUnloadPlugIn() override;
   LPUNKNOWN GetPlugInObjectInterface(const ON_UUID& iid);
 
-  // File import plug-in overrides
-  void AddFileType(ON_ClassArray<CRhinoFileType>&, const CRhinoFileReadOptions&);
-  BOOL ReadFile(const wchar_t*, int, CRhinoDoc&, const CRhinoFileReadOptions&);
+  // File import overrides
+  void AddFileType(ON_ClassArray<CRhinoFileType>& extensions, const CRhinoFileReadOptions& options) override;
+  BOOL ReadFile(const wchar_t* filename, int index, CRhinoDoc& doc, const CRhinoFileReadOptions& options) override;
 
 private:
-  ON_Mesh* ReadFalseColorMeshFile(FILE* fp, ON_Mesh* mesh = 0);
-  ON_Mesh* ReadStructuredTechPlotFile(FILE* fp, ON_Mesh* mesh = 0);
+  ON_Mesh* ReadFalseColorMeshFile(FILE* fp, ON_Mesh* mesh = nullptr);
+  ON_Mesh* ReadStructuredTechPlotFile(FILE* fp, ON_Mesh* mesh = nullptr);
 
 private:
   ON_wString m_plugin_version;
@@ -39,6 +42,7 @@ private:
   CAnalysisObject m_object;
 };
 
+// Return a reference to the one and only CAnalysisToolsPlugIn object
 CAnalysisToolsPlugIn& AnalysisToolsPlugIn();
 
 

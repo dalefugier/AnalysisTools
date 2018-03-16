@@ -1,4 +1,4 @@
-// Copyright (c) 1993-2016 Robert McNeel & Associates. All rights reserved.
+// Copyright (c) 1993-2018 Robert McNeel & Associates. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 // AnalysisUserData.h
@@ -62,10 +62,10 @@ public:
   CAnalysisUserData(const CAnalysisUserData&);
   CAnalysisUserData& operator=(const CAnalysisUserData&);
 
-  BOOL GetDescription(ON_wString& description);
-  BOOL Archive() const;
-  BOOL Write(ON_BinaryArchive& archive) const;
-  BOOL Read(ON_BinaryArchive& archive);
+  bool GetDescription(ON_wString& description) override;
+  bool Archive() const override;
+  bool Write(ON_BinaryArchive& archive) const override;
+  bool Read(ON_BinaryArchive& archive) override;
 
   // analysis parameters - one for each mesh vertex
   ON_SimpleArray<double> m_a;
